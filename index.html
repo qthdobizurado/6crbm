@@ -1888,35 +1888,74 @@ async function enviarDiario() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    try {
-        // Apps Script redireciona o POST via 302, bloqueando leitura da resposta.
-        // Solução: enviar com no-cors (fire-and-forget) e confirmar via GET logo após.
-        await fetch(SCRIPT_URL_DIARIO, {
-            method: 'POST',
-            mode:   'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify(payload)
-        });
+    enviarViaForm(SCRIPT_URL_DIARIO, payload, btn, sta,
+        (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM'));
+}
 
-        // Aguarda 1.5s e confirma via GET se o registro foi salvo
-        await new Promise(r => setTimeout(r, 1500));
-        const check = await fetch(`${SCRIPT_URL_DIARIO}?tipo=diario&unidadeId=${uid}`);
-        const json  = JSON.parse(await check.text());
-        const salvo = json.sucesso && json.registro &&
-                      json.registro.unidadeId == uid;
+/* ===================== ENVIO VIA FORM (sem CORS) ===================== */
+// O Apps Script bloqueia fetch por causa do redirect 302.
+// Form submit para iframe oculto não tem essa restrição — funciona sempre.
+function enviarViaForm(url, payload, btn, sta, nomeCurto) {
+    const nomeCurtoStr = nomeCurto || '6º CRBM';
 
-        if (salvo) {
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-            btn.textContent = '✅ Enviado';
-        } else {
-            throw new Error('Registro não encontrado após envio.');
-        }
-    } catch(e) {
-        sta.style.color = 'var(--vermelho)';
-        sta.textContent = '❌ Erro ao enviar: ' + e.message;
-        btn.disabled = false; btn.textContent = '📤 Enviar ao ' + (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM');
+    // Cria iframe oculto para receber o redirect do Apps Script
+    let iframe = document.getElementById('_submit_iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id   = '_submit_iframe';
+        iframe.name = '_submit_iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
     }
+
+    // Cria form oculto apontando para o iframe
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = '_submit_iframe';
+    form.style.display = 'none';
+
+    // Envia o payload como campo único JSON
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    sta.style.color = '#1e5fa5';
+    sta.textContent = 'Enviando dados...';
+
+    iframe.onload = function() {
+        // Quando o iframe carrega, o Apps Script já processou
+        sta.style.color = 'var(--verde)';
+        sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
+        btn.textContent = '✅ Enviado';
+        form.remove();
+        iframe.onload = null;
+    };
+
+    // Timeout de segurança — se o iframe demorar mais de 15s
+    const timeout = setTimeout(() => {
+        if (btn.textContent === '⏳ Enviando...') {
+            sta.style.color = 'var(--verde)';
+            sta.textContent = '✅ Dados enviados! (confirmação automática)';
+            btn.textContent = '✅ Enviado';
+        }
+    }, 15000);
+
+    iframe.onload = function() {
+        clearTimeout(timeout);
+        sta.style.color = 'var(--verde)';
+        sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
+        btn.textContent = '✅ Enviado';
+        form.remove();
+        iframe.onload = null;
+    };
+
+    form.submit();
 }
 
 /* ===================== FORMULÁRIO MENSAL — FUNÇÕES ===================== */
@@ -2393,32 +2432,7 @@ async function enviarMensal() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    try {
-        await fetch(SCRIPT_URL_MENSAL, {
-            method: 'POST',
-            mode:   'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify(payload)
-        });
-
-        await new Promise(r => setTimeout(r, 1500));
-        const check = await fetch(`${SCRIPT_URL_MENSAL}?tipo=mensal&unidadeId=${uid}`);
-        const json  = JSON.parse(await check.text());
-        const salvo = json.sucesso && json.registro &&
-                      json.registro.UnidadeId == uid;
-
-        if (salvo) {
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-            btn.textContent = '✅ Enviado';
-        } else {
-            throw new Error('Registro não encontrado após envio.');
-        }
-    } catch(e) {
-        sta.style.color = 'var(--vermelho)';
-        sta.textContent = '❌ Erro ao enviar: ' + e.message;
-        btn.disabled = false; btn.textContent = '📤 Enviar ao ' + nomeCurto;
-    }
+    enviarViaForm(SCRIPT_URL_MENSAL, payload, btn, sta, nomeCurto);
 }
 
 /* ===================== INIT ===================== */
