@@ -19,7 +19,7 @@ const NOME_CURTO       = '6º CRBM';                // Usado em botões e mensag
    2. Menu: Implantações > Nova implantação > App da Web
    3. Copie a URL e cole aqui
    ------------------------------------------------------------ */
-const SCRIPT_URL        = 'COLE_AQUI_A_URL_DO_WEBAPP';
+const SCRIPT_URL        = 'https://script.google.com/macros/s/AKfycbyuxiVvORoZHOmyoowKkeVcGw7snAj308CzOY7ktGUx1p95bXokpY69dDMA-tQKXbSp/exec';
 const SCRIPT_URL_DIARIO = SCRIPT_URL;
 const SCRIPT_URL_MENSAL = SCRIPT_URL;
 
