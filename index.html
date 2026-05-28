@@ -2052,6 +2052,8 @@ function iniciarFormularioMensal() {
         return null;
     }
 
+    let _pcArrastando = false;
+
     document.getElementById('fm-pc-body').addEventListener('mousedown', function(e) {
         const el = e.target.closest('input,textarea');
         if (!el) return;
@@ -2062,26 +2064,44 @@ function iniciarFormularioMensal() {
             e.preventDefault();
             _pcSelFim = pos;
             _pcDestacar();
-            // Tira o foco do campo atual para não interferir
             el.blur();
         } else {
             _pcSelInicio = pos;
             _pcSelFim    = pos;
-            // Destaque será aplicado no focus
+            _pcArrastando = true;
+            _pcDestacar();
         }
     });
 
-    document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
+    document.getElementById('fm-pc-body').addEventListener('mousemove', function(e) {
+        if (!_pcArrastando || !_pcSelInicio) return;
         const el = e.target.closest('input,textarea');
         if (!el) return;
         const pos = _pcPosicao(el);
         if (!pos) return;
-        // Se não há shift, reinicia seleção para a célula clicada
-        if (_pcSelInicio && _pcSelFim &&
-            _pcSelInicio.r === _pcSelFim.r && _pcSelInicio.c === _pcSelFim.c) {
-            _pcSelInicio = pos;
-            _pcSelFim    = pos;
+        // Só atualiza se mudou de célula
+        if (_pcSelFim && pos.r === _pcSelFim.r && pos.c === _pcSelFim.c) return;
+        e.preventDefault();
+        _pcSelFim = pos;
+        _pcDestacar();
+        // Remove foco para não abrir teclado mobile ao arrastar
+        if (document.activeElement && document.getElementById('fm-pc-body').contains(document.activeElement)) {
+            document.activeElement.blur();
         }
+    });
+
+    document.addEventListener('mouseup', function() {
+        _pcArrastando = false;
+    });
+
+    document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
+        if (_pcArrastando) return; // não interfere durante arrastar
+        const el = e.target.closest('input,textarea');
+        if (!el) return;
+        const pos = _pcPosicao(el);
+        if (!pos) return;
+        _pcSelInicio = pos;
+        _pcSelFim    = pos;
         _pcDestacar();
     });
 
