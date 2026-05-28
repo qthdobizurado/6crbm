@@ -1968,32 +1968,34 @@ function iniciarFormularioMensal() {
 
     abrirFmTab(1);
 
-    // Paste inteligente no Plano de Chamada — distribui linhas coladas
+    // Paste inteligente no Plano de Chamada — distribui linhas coladas em qualquer coluna
     document.getElementById('fm-pc-body').addEventListener('paste', function(e) {
         const target = e.target;
-        if (!target.classList.contains('fm-pc-nome')) return;
-        e.preventDefault();
+        const tbody  = document.getElementById('fm-pc-body');
+
+        // Descobre em qual célula (0-3) o paste ocorreu
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const rowIdx = rows.findIndex(tr => tr.contains(target));
+        if (rowIdx === -1) return;
+
+        const cells = Array.from(rows[rowIdx].querySelectorAll('input, textarea'));
+        const colIdx = cells.findIndex(el => el === target);
+        if (colIdx === -1) return;
 
         const texto = (e.clipboardData || window.clipboardData).getData('text');
         const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-        if (linhas.length <= 1) {
-            target.value = texto.trim();
-            return;
-        }
 
-        // Preenche a partir da linha atual
-        const tbody = document.getElementById('fm-pc-body');
-        const rows  = Array.from(tbody.querySelectorAll('tr'));
-        const idx   = rows.findIndex(tr => tr.contains(target));
+        // Se só uma linha, deixa o comportamento padrão
+        if (linhas.length <= 1) return;
 
-        linhas.forEach((nome, i) => {
-            let tr = rows[idx + i];
-            if (!tr) {
-                adicionarLinhaPC();
-                tr = tbody.querySelectorAll('tr')[idx + i];
-            }
-            const ta = tr.querySelector('textarea.fm-pc-nome');
-            if (ta) ta.value = nome;
+        e.preventDefault();
+
+        linhas.forEach((val, i) => {
+            // Cria linha se necessário
+            if (rowIdx + i >= tbody.querySelectorAll('tr').length) adicionarLinhaPC();
+            const tr = tbody.querySelectorAll('tr')[rowIdx + i];
+            const el = tr.querySelectorAll('input, textarea')[colIdx];
+            if (el) el.value = val;
         });
     });
 
