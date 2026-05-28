@@ -1889,17 +1889,29 @@ async function enviarDiario() {
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
     try {
-        const res = await fetch(SCRIPT_URL_DIARIO, {
-            method:'POST',
+        // Apps Script redireciona o POST via 302, bloqueando leitura da resposta.
+        // Solução: enviar com no-cors (fire-and-forget) e confirmar via GET logo após.
+        await fetch(SCRIPT_URL_DIARIO, {
+            method: 'POST',
+            mode:   'no-cors',
             headers: {'Content-Type': 'text/plain'},
             body: JSON.stringify(payload)
         });
-        const json = await res.json();
-        if (json.sucesso) {
+
+        // Aguarda 1.5s e confirma via GET se o registro foi salvo
+        await new Promise(r => setTimeout(r, 1500));
+        const check = await fetch(`${SCRIPT_URL_DIARIO}?tipo=diario&unidadeId=${uid}`);
+        const json  = await check.json();
+        const salvo = json.sucesso && json.registro &&
+                      json.registro.unidadeId == uid;
+
+        if (salvo) {
             sta.style.color = 'var(--verde)';
             sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
             btn.textContent = '✅ Enviado';
-        } else throw new Error(json.mensagem || 'Erro desconhecido');
+        } else {
+            throw new Error('Registro não encontrado após envio.');
+        }
     } catch(e) {
         sta.style.color = 'var(--vermelho)';
         sta.textContent = '❌ Erro ao enviar: ' + e.message;
@@ -2382,17 +2394,26 @@ async function enviarMensal() {
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
     try {
-        const res = await fetch(SCRIPT_URL_MENSAL, {
-            method:'POST',
+        await fetch(SCRIPT_URL_MENSAL, {
+            method: 'POST',
+            mode:   'no-cors',
             headers: {'Content-Type': 'text/plain'},
             body: JSON.stringify(payload)
         });
-        const json = await res.json();
-        if (json.sucesso) {
+
+        await new Promise(r => setTimeout(r, 1500));
+        const check = await fetch(`${SCRIPT_URL_MENSAL}?tipo=mensal&unidadeId=${uid}`);
+        const json  = await check.json();
+        const salvo = json.sucesso && json.registro &&
+                      json.registro.UnidadeId == uid;
+
+        if (salvo) {
             sta.style.color = 'var(--verde)';
             sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
             btn.textContent = '✅ Enviado';
-        } else throw new Error(json.mensagem || 'Erro desconhecido');
+        } else {
+            throw new Error('Registro não encontrado após envio.');
+        }
     } catch(e) {
         sta.style.color = 'var(--vermelho)';
         sta.textContent = '❌ Erro ao enviar: ' + e.message;
