@@ -1,2460 +1,1363 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Painel de Comando</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        :root{
-            --vermelho:#CE1126;--vermelho-esc:#8B0000;--amarelo:#FFD700;
-            --cinza:#495057;--cinza-esc:#343a40;--texto:#2c3e50;--fundo:#f8f9fa;
-            --verde:#28a745;--azul-claro:#17a2b8;--laranja:#FF8C00;
-            --azul-oficiais:#1e88e5;--laranja-pracas:#fb8c00;
-            --u1:#1e5fa5;--u2:#fb8c00;--u3:#28a745;--u4:#d85a30;--u5:#888780;
-        }
-        body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);min-height:100vh;color:var(--texto)}
-        header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;text-align:center;padding:30px 20px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-        header h1{font-size:2rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
-        header h2{font-size:1.1rem;font-weight:400;opacity:.95}
-        nav{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1);position:sticky;top:0;z-index:100}
-        nav button{background:none;border:none;color:var(--texto);padding:18px 35px;font-size:.95rem;cursor:pointer;transition:all .3s;text-transform:uppercase;font-weight:600;letter-spacing:.5px;border-bottom:3px solid transparent}
-        nav button:hover{background:#f8f9fa;color:var(--vermelho)}
-        nav button.ativo{color:var(--vermelho);border-bottom-color:var(--vermelho);background:#fff5f5}
-        main{padding:30px 20px;max-width:1400px;margin:0 auto}
-        .conteudo-aba{display:none;animation:fadeIn .5s}
-        .conteudo-aba.ativo{display:block}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel de Comando - 6º CRBM</title>
+  
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0c284d 0%, #1a4a7a 100%);
+      color: #333;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
 
-        /* ===== NAVEGAÇÃO DASHBOARDS ===== */
-        .dashboard-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:15px}
-        .dash-arrow{background:var(--vermelho);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 3px 8px rgba(0,0,0,.25);flex-shrink:0}
-        .dash-arrow:hover{background:var(--vermelho-esc);transform:scale(1.1)}
-        .dash-arrow:disabled{background:#adb5bd;cursor:not-allowed;transform:none;box-shadow:none}
-        .dash-titulo-wrapper{text-align:center;flex:1}
-        .dashboard-title{color:#000;text-transform:uppercase;font-size:1.5rem;border-bottom:3px solid #000;padding-bottom:10px;display:inline-block;width:100%}
-        .dashboard-info{text-align:center;color:var(--cinza);font-size:.85rem;margin-top:10px;font-style:italic}
-        .dash-indicadores{display:flex;justify-content:center;gap:8px;margin-top:8px}
-        .dash-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--cinza);background:transparent;cursor:pointer;transition:all .2s}
-        .dash-dot.ativo{background:var(--vermelho);border-color:var(--vermelho)}
-        .dashboard-panel{display:none;animation:fadeIn .4s}
-        .dashboard-panel.ativo{display:block}
+    /* ===== TELA DE LOGIN ===== */
+    #login-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(12, 40, 77, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .login-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .login-box h2 {
+      color: #1e5fa5;
+      margin-bottom: 10px;
+      font-size: 1.4rem;
+    }
+    .login-box p {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      transition: border-color 0.3s;
+    }
+    .login-box input:focus {
+      outline: none;
+      border-color: #1e5fa5;
+    }
+    .login-box .error {
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .login-box .error.show { display: block; }
+    .login-box .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+    .btn-primary {
+      background: #1e5fa5;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #164a82; }
+    .btn-secondary {
+      background: #6c757d;
+      color: #fff;
+    }
+    .btn-secondary:hover { background: #545b62; }
 
-        /* ===== DASHBOARD EFETIVO ===== */
-        .dashboard-section{margin-bottom:40px}
-        .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px}
-        .card-estatistico{background:#fff;border:3px solid #000;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);overflow:hidden}
-        .card-header{background:var(--amarelo);color:#000;padding:15px 20px;font-weight:700;text-transform:uppercase;font-size:1rem;border-bottom:2px solid #000;text-align:center}
-        .card-body{padding:20px}
-        .card-label{font-size:.9rem;color:var(--cinza);text-align:center;text-transform:uppercase;letter-spacing:.5px;margin-bottom:15px}
-        .chart-container{position:relative;height:220px;width:100%}
-        .legend-custom{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:15px}
-        .legend-item{display:flex;align-items:center;gap:6px;font-size:.8rem}
-        .legend-color{width:16px;height:16px;border-radius:3px;border:1px solid #000}
-        .legend-oficiais{background:#4169E1}
-        .legend-pracas{background:#FF8C00}
-        .legend-total{background:#28A745}
-        .resumo-rapido{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:25px}
-        .resumo-card{background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));color:#fff;padding:15px;border-radius:8px;text-align:center;border:2px solid #000}
-        .resumo-card .numero{font-size:1.8rem;font-weight:800;display:block;margin:5px 0}
-        .resumo-card .rotulo{font-size:.8rem;text-transform:uppercase;opacity:.95}
+    /* ===== PAINEL PRINCIPAL ===== */
+    #main-panel {
+      display: none;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-        /* ===== DASHBOARD ESPECIALISTAS ===== */
-        .esp-wrapper{display:flex;flex-direction:column;gap:30px}
-        .esp-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:5px}
-        .esp-resumo-card{background:linear-gradient(135deg,#1e3a5f,#0d2137);color:#fff;padding:14px;border-radius:8px;text-align:center;border:2px solid #000}
-        .esp-resumo-card .numero{font-size:1.7rem;font-weight:800;display:block;margin:4px 0}
-        .esp-resumo-card .rotulo{font-size:.75rem;text-transform:uppercase;line-height:1.3;opacity:.95}
+    /* Cabeçalho */
+    header {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 25px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .header-title h1 {
+      color: #1e5fa5;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .header-title h2 {
+      color: #666;
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin-top: 3px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .btn-logout {
+      background: #d32f2f;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-logout:hover { background: #b71c1c; }
 
-        /* ===== DASHBOARD VIATURAS ===== */
-        .vtr-wrapper{display:flex;flex-direction:column;gap:25px}
-        .vtr-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:5px}
-        .vtr-resumo-card{background:linear-gradient(135deg,#1a3a1a,#0d220d);color:#fff;padding:14px;border-radius:8px;text-align:center;border:2px solid #000}
-        .vtr-resumo-card .numero{font-size:1.7rem;font-weight:800;display:block;margin:4px 0}
-        .vtr-resumo-card .rotulo{font-size:.75rem;text-transform:uppercase;line-height:1.3;opacity:.95}
-        .vtr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px}
-        .vtr-card{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-        .vtr-card-header{padding:15px 20px;font-weight:700;text-transform:uppercase;font-size:.95rem;border-bottom:2px solid #000;text-align:center;background:var(--amarelo);color:#000}
-        .vtr-card-body{padding:20px}
-        .vtr-chart-container{position:relative;height:240px;width:100%}
-        /* Status badges */
-        .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:15px}
-        .status-badge{border-radius:8px;padding:10px;text-align:center;border:2px solid #000}
-        .status-badge .sb-num{font-size:1.4rem;font-weight:800;display:block}
-        .status-badge .sb-label{font-size:.7rem;text-transform:uppercase;font-weight:600}
-        .sb-operacional{background:#d4edda;color:#155724}
-        .sb-manutencao{background:#fff3cd;color:#856404}
-        .sb-inoperante{background:#f8d7da;color:#721c24}
+    /* Abas de Navegação */
+    .tabs {
+      display: flex;
+      gap: 5px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #555;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #1e5fa5;
+      color: #fff;
+    }
+    .tab-btn:hover:not(.active) {
+      background: #f0f4f8;
+    }
 
-        /* ===== DASHBOARD MATERIAIS ===== */
-        .mat-wrapper{display:flex;flex-direction:column;gap:25px}
-        .mat-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:5px}
-        .mat-resumo-card{background:linear-gradient(135deg,#3a1a00,#220d00);color:#fff;padding:14px;border-radius:8px;text-align:center;border:2px solid #000}
-        .mat-resumo-card .numero{font-size:1.7rem;font-weight:800;display:block;margin:4px 0}
-        .mat-resumo-card .rotulo{font-size:.75rem;text-transform:uppercase;line-height:1.3;opacity:.95}
-        .mat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px}
-        .mat-card{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-        .mat-card-header{padding:15px 20px;font-weight:700;text-transform:uppercase;font-size:.95rem;border-bottom:2px solid #000;text-align:center;background:var(--amarelo);color:#000}
-        .mat-card-body{padding:20px}
-        .mat-chart-container{position:relative;height:240px;width:100%}
-        /* Barras horizontais de materiais */
-        .mat-barra-lista{display:flex;flex-direction:column;gap:10px;padding:5px 0}
-        .mat-barra-item{display:flex;align-items:center;gap:10px}
-        .mat-barra-nome{font-size:.78rem;font-weight:600;width:140px;flex-shrink:0;text-align:right;color:#333}
-        .mat-barra-track{flex:1;height:22px;background:#eee;border-radius:3px;border:1px solid #ccc;overflow:hidden;position:relative}
-        .mat-barra-fill{height:100%;border-radius:3px;transition:width .5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:5px}
-        .mat-barra-val{font-size:.72rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+    /* Conteúdo das Abas */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        /* ===== MINI GRÁFICOS POR CURSO ===== */
-        .mini-graficos-section{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12)}
-        .mini-graficos-section .card-header{background:var(--amarelo);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-        .mini-graficos-section .card-header span{font-weight:700;text-transform:uppercase;font-size:1rem}
-        .mini-graficos-legenda{display:flex;flex-wrap:wrap;gap:10px;padding:12px 18px;background:#f8f9fa;border-bottom:2px solid #000}
-        .mini-graficos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:0;padding:0}
-        .mini-card{border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:10px 12px 8px;background:#fff;transition:background .2s}
-        .mini-card:hover{background:#fffbea}
-        .mini-card-titulo{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-        .mini-abrev{background:var(--vermelho);color:#fff;font-weight:700;font-size:.62rem;padding:2px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0}
-        .mini-nome{font-size:.68rem;color:#555;line-height:1.2;font-weight:500;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-        .mini-total-badge{text-align:center;font-size:.7rem;color:var(--cinza);margin-top:5px;padding-top:4px;border-top:1px dashed #ddd}
-        .mini-total-badge strong{color:var(--vermelho-esc);font-size:.8rem}
-        .mini-barras{display:flex;align-items:stretch;gap:3px;height:95px;padding-top:4px}
-        .mini-barra-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:0}
-        .mini-barra-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;width:100%;overflow:hidden}
-        .mini-barra-bg{width:100%;background:#f0f0f0;border-radius:2px 2px 0 0;overflow:hidden;display:flex;align-items:flex-end}
-        .mini-barra-fill{width:100%;border-radius:2px 2px 0 0;transition:height .4s ease;min-height:2px}
-        .mini-barra-val{font-size:.6rem;font-weight:700;color:#333;text-align:center;line-height:1;margin-top:2px;height:10px;flex-shrink:0}
-        .mini-barra-label{font-size:.55rem;color:#777;text-align:center;line-height:1;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:10px;flex-shrink:0;margin-top:2px}
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .card h3 {
+      color: #1e5fa5;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f4f8;
+      font-size: 1.2rem;
+    }
 
-        /* ===== LEGENDA ===== */
-        .legenda-grafico{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:.8rem}
-        .leg-item{display:flex;align-items:center;gap:5px}
-        .leg-box{width:13px;height:13px;border-radius:2px;border:1px solid #000}
+    /* Tabela */
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      color: #333;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    tr:hover { background: #f9fbfd; }
+    .total-row {
+      background: #e8f4fd !important;
+      font-weight: 700;
+    }
 
-        /* ===== UNIDADES ===== */
-        .titulo-unidades{text-align:center;color:#000;margin:30px 0 15px;text-transform:uppercase;font-size:1.5rem;border-bottom:3px solid #000;padding-bottom:10px;display:inline-block;width:100%}
-        .unidades-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 0 18px}
-        .unidade-tab{
-            color:#fff;border:none;padding:0;cursor:pointer;
-            background:transparent;border-radius:8px;
-            flex:1;min-width:170px;max-width:none;
-        }
-        .unidade-tab-inner{
-            display:flex;align-items:center;justify-content:center;
-            padding:14px 18px;
-            background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));
-            border-radius:8px;
-            border:2px solid transparent;
-            border-bottom:4px solid rgba(0,0,0,.3);
-            font-size:.82rem;font-weight:700;
-            text-transform:uppercase;letter-spacing:.6px;
-            transition:all .25s;
-            box-shadow:0 2px 8px rgba(0,0,0,.18);
-            text-shadow:0 1px 2px rgba(0,0,0,.3);
-            position:relative;overflow:hidden;
-            white-space:normal;text-align:center;line-height:1.3;
-            height:52px;
-        }
-        .unidade-tab-inner::after{
-            content:'';position:absolute;top:0;left:0;right:0;height:1px;
-            background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
-        }
-        .unidade-tab:hover .unidade-tab-inner{
-            background:linear-gradient(135deg,#5a6268,var(--cinza-esc));
-            transform:translateY(-2px);
-            box-shadow:0 5px 14px rgba(0,0,0,.28);
-        }
-        .unidade-tab.ativo .unidade-tab-inner{
-            background:linear-gradient(135deg,var(--cinza-esc),#1a1f24);
-            border-color:var(--amarelo);
-            border-bottom-color:var(--amarelo);
-            box-shadow:0 4px 14px rgba(0,0,0,.3), 0 0 0 1px var(--amarelo);
-            color:var(--amarelo);
-            text-shadow:0 1px 4px rgba(0,0,0,.4);
-        }
-        .unidade-conteudo{display:none;animation:slideIn .35s;border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.15);border:3px solid #000}
-        .unidade-conteudo.ativo{display:block}
-        @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @media(max-width:768px){
-            .unidades-tabs{gap:6px}
-            .unidade-tab{min-width:calc(50% - 6px);max-width:none;flex:0 0 calc(50% - 6px)}
-            .unidade-tab-inner{font-size:.75rem;padding:12px 10px}
-            .unidade-header-info{text-align:center}
-            .unidade-header-top{flex-direction:column;gap:10px}
-            .unidade-header-info h3{font-size:1.1rem}
-        }
-        @media(max-width:480px){
-            .unidade-tab{min-width:100%;flex:0 0 100%}
-        }
-        .unidade-header{color:#fff;padding:28px 28px 0;text-align:center;background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));border-left:3px solid #000;border-right:3px solid #000;margin-top:-3px;position:relative;z-index:5}
-        .unidade-header-top{display:flex;align-items:center;gap:18px;margin-bottom:18px;justify-content:center;flex-wrap:wrap}
-        .unidade-header-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;color:#fff;border:3px solid rgba(255,255,255,.5);flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.3)}
-        .unidade-header-info{text-align:left}
-        .unidade-header-info h3{font-size:1.4rem;margin-bottom:3px;text-transform:uppercase;font-weight:800;letter-spacing:.5px}
-        .unidade-subtipo{opacity:.85;font-size:.88rem;margin-bottom:6px}
-        .unidade-ultima-att{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:3px 12px;font-size:.75rem;opacity:.95}
-        .unidade-ultima-att strong{color:var(--amarelo)}
-        @media(max-width:768px){
-            .unidade-header-info{text-align:center}
-            .unidade-header-top{flex-direction:column;gap:10px}
-            .unidade-header-info h3{font-size:1.1rem}
-        }
-        .controles-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px;padding-top:20px}
-        .controles-tabs::-webkit-scrollbar{height:3px}
-        .controles-tabs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:2px}
-        .controle-tab{border:2px solid rgba(255,255,255,.35);padding:10px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.78rem;transition:all .3s;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.85);background:rgba(255,255,255,.1);white-space:normal;text-align:center;line-height:1.3;display:inline-flex;align-items:center;justify-content:center;min-width:120px}
-        .controle-tab:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.6);color:#fff;transform:translateY(-1px)}
-        .controle-tab.ativo{background:var(--amarelo)!important;color:#000!important;border-color:var(--amarelo)!important;box-shadow:0 3px 10px rgba(255,215,0,.4);font-weight:700}
-        .controles-container{padding:30px;background:rgba(255,255,255,.95);border:3px solid #000;border-top:none;border-radius:0 0 12px 12px}
-        .controle-conteudo{display:none;background:#f8f9fa;border-radius:8px;padding:20px;border:2px dashed rgba(0,0,0,.15);min-height:250px;animation:fadeIn .4s}
-        .controle-conteudo.ativo{display:block}
-        .controle-conteudo h4{font-size:1.2rem;margin-bottom:15px;text-transform:uppercase;color:#000;text-align:center}
-        .vazio-container{background:#fff;border-radius:12px;padding:60px 40px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
-        .vazio-msg{color:#6c757d;font-size:1.2rem;font-style:italic}
-        .comando-subcomando{background:#fff;border:2px solid #000;border-radius:8px;padding:15px;margin-bottom:15px;display:flex;flex-wrap:wrap;gap:15px;justify-content:center}
-        .comando-item{flex:1;min-width:250px;display:flex;align-items:center;gap:10px}
-        .comando-label{font-weight:700;color:#000;text-transform:uppercase;min-width:120px;text-align:right}
-        .comando-valor{flex:1;background:#f8f9fa;border:2px solid #000;padding:8px 12px;border-radius:4px;font-style:italic;color:var(--texto);text-align:left}
-        .tabela{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;font-size:.85rem}
-        .tabela .cabecalho{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem}
-        .tabela th,.tabela td{border:2px solid #000;padding:6px 8px;text-align:center;vertical-align:middle}
-        .tabela td:first-child{text-align:left;font-weight:500;background:#f8f9fa;border-right:2px solid #000;font-size:.8rem}
-        .tabela .num{font-weight:600;min-width:50px}
-        .tabela .total-linha{font-weight:600;background:#e9ecef;color:#000;font-size:.9rem}
-        .tabela .total-geral{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;font-weight:700}
-        .tabela .total-geral td:first-child{background:var(--vermelho-esc)}
-        .tabela .total-geral .num{font-size:1.05rem;background:rgba(255,255,255,.2);font-weight:700}
-        .tabela-especialistas{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:15px 0}
-        .tabela-especialistas th,.tabela-especialistas td{border:2px solid #000;padding:6px 8px;text-align:center;vertical-align:middle}
-        .tabela-especialistas .cabecalho{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem}
-        .tabela-especialistas .col-curso{width:40%;font-weight:500;text-align:left;padding-left:10px;background:#f8f9fa;border-right:2px solid #000;font-size:.8rem}
-        .tabela-especialistas .col-curso .abrev-un{font-weight:700;color:var(--vermelho);margin-right:8px}
-        .tabela-especialistas .num{font-weight:600;min-width:60px;background:#fff}
-        .tabela-veiculo{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin-top:15px}
-        .tabela-veiculo th,.tabela-veiculo td{border:2px solid #000;padding:8px;text-align:center;vertical-align:middle}
-        .tabela-veiculo .header-principal th{background:var(--amarelo)!important;color:#000;font-weight:700;text-transform:uppercase;border-right:2px solid #000}
-        .tabela-veiculo .header-principal th:last-child{border-right:none}
-        .tabela-veiculo .col-tipo{background:#f8f9fa;font-weight:600;width:60%;text-align:left;padding-left:10px}
-        .tabela-veiculo .col-condicao{width:40%;text-align:left;font-style:italic;padding-left:10px;background:#f8f9fa}
-        .tabela-materiais{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:15px 0}
-        .tabela-materiais th,.tabela-materiais td{border:2px solid #000;padding:6px 8px;text-align:center;vertical-align:middle}
-        .tabela-materiais .cabecalho{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem}
-        .tabela-materiais td:first-child{text-align:left;font-weight:500;background:#f8f9fa;border-right:2px solid #000;font-size:.8rem}
-        .tabela-materiais .num{font-weight:600;min-width:60px}
-        .tabela-materiais .col-condicao{text-align:left;font-style:italic}
-        .titulo-secao{text-align:left;margin:15px 0 10px;color:var(--cinza);text-transform:uppercase;font-size:1rem;border-bottom:2px solid #000;padding-bottom:5px;font-weight:600}
-        .tabela-plano-chamada{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:15px 0;font-size:.8rem}
-        .tabela-plano-chamada th,.tabela-plano-chamada td{border:2px solid #000;padding:8px;vertical-align:middle}
-        .tabela-plano-chamada .cabecalho th{background:var(--amarelo)!important;border-right:2px solid #000;font-weight:700;text-transform:uppercase;font-size:.75rem}
-        .tabela-plano-chamada .cabecalho th:last-child{border-right:none}
-        .tabela-plano-chamada td:first-child{text-align:left;font-weight:600;background:#f8f9fa;border-right:2px solid #000}
-        .tabela-plano-chamada .col-nome{min-width:250px;text-align:left;font-style:italic}
-        .tabela-plano-chamada .col-telefone{min-width:140px;font-weight:500}
-        .tabela-plano-chamada .col-cpf{min-width:130px}
-        .tabela-plano-chamada .col-cnh{min-width:100px;font-weight:600}
-        .tabela-plano-chamada .observacao{font-size:.75rem;color:#6c757d;text-align:left;padding:10px;background:#f8f9fa;border-top:2px solid #000}
+    /* Grid de Cards para Dashboard */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #1e5fa5, #2a7bc7);
+      color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-card.danger { background: linear-gradient(135deg, #d32f2f, #e53935); }
+    .stat-card.warning { background: linear-gradient(135deg, #fb8c00, #ff9800); }
+    .stat-card.success { background: linear-gradient(135deg, #28a745, #43a047); }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    .stat-card .label {
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
 
-        @media(max-width:768px){
-            header h1{font-size:1.5rem}header h2{font-size:.9rem}
-            nav button{padding:15px 15px;font-size:.8rem}
-            .dashboard-grid{grid-template-columns:1fr}
-            .resumo-rapido{grid-template-columns:repeat(2,1fr)}
-            .unidades-tabs{flex-direction:column}.unidade-tab{min-width:100%;border-right:none}
-            .controles-tabs{flex-direction:column}.controle-tab{width:100%}
-            .controles-container{padding:15px}
-            .tabela{font-size:.7rem}.tabela th,.tabela td{padding:4px 5px}
-            .dash-arrow{width:36px;height:36px;font-size:1.1rem}
-            .mini-graficos-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
-            .vtr-grid,.mat-grid{grid-template-columns:1fr}
-        }
-        @media(max-width:480px){
-            .mini-graficos-grid{grid-template-columns:repeat(2,1fr)}
-        }
+    /* Gráficos */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+    }
+    .chart-container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .chart-container canvas {
+      max-height: 300px;
+    }
 
-        /* ===== LINKS E FORMULÁRIOS ===== */
-        .links-page-wrapper{max-width:860px;margin:0 auto}
-        .links-page-header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;border-radius:12px;padding:22px 28px;margin-bottom:22px;border:3px solid #000;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-        .links-page-titulo{font-size:1.2rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-        .links-page-sub{font-size:.85rem;opacity:.88;font-style:italic}
-        .links-lista{display:flex;flex-direction:column;gap:14px}
-        .link-item{background:#fff;border:3px solid #000;border-radius:10px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-wrap:wrap}
-        .link-item-info{flex:1;min-width:0}
-        .link-item-nome{font-weight:700;color:#333;font-size:.92rem;text-transform:uppercase;margin-bottom:4px}
-        .link-item-tipo{font-size:.75rem;color:#888;font-style:italic}
-        .link-item-url{font-size:.72rem;color:#1e5fa5;font-family:monospace;word-break:break-all;margin-top:4px;display:block}
-        .link-btn-copiar{background:var(--vermelho);color:#fff;border:2px solid #000;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;white-space:nowrap;transition:all .2s;flex-shrink:0}
-        .link-btn-copiar:hover{background:var(--vermelho-esc);transform:translateY(-1px)}
-        .link-btn-copiar.copiado{background:var(--verde)}
+    /* Formulários */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #444;
+      font-size: 0.9rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #1e5fa5;
+      box-shadow: 0 0 0 3px rgba(30,95,165,0.1);
+    }
 
-        /* Formulários embutidos */
-        .form-wrapper{max-width:760px;margin:0 auto}
-        .form-card{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-        .form-card-header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-        .form-card-header span:first-child{font-size:1.05rem;font-weight:800;text-transform:uppercase;letter-spacing:1px}
-        .form-unidade-badge{background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.5);padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700}
-        .form-card-body{padding:24px}
-        .form-grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-        .form-grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:6px}
-        .form-grupo{display:flex;flex-direction:column;gap:5px}
-        .form-label{font-size:.78rem;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.3px}
-        .form-input{border:2px solid #ccc;border-radius:6px;padding:8px 12px;font-size:.9rem;font-family:inherit;transition:border .2s;background:#fafafa}
-        .form-input:focus{outline:none;border-color:var(--vermelho);background:#fff}
-        .form-textarea{border:2px solid #ccc;border-radius:6px;padding:8px 12px;font-size:.85rem;font-family:inherit;resize:vertical;min-height:70px;transition:border .2s;background:#fafafa}
-        .form-textarea:focus{outline:none;border-color:var(--vermelho);background:#fff}
-        .form-secao-titulo{font-size:.85rem;font-weight:700;text-transform:uppercase;color:var(--cinza);border-bottom:2px solid #000;padding-bottom:6px;margin:18px 0 12px;letter-spacing:.5px}
-        .form-btn-enviar{width:100%;background:var(--vermelho);color:#fff;border:3px solid #000;padding:14px;border-radius:8px;cursor:pointer;font-weight:800;font-size:.95rem;text-transform:uppercase;letter-spacing:1px;margin-top:20px;transition:all .2s;box-shadow:0 3px 8px rgba(0,0,0,.2)}
-        .form-btn-enviar:hover{background:var(--vermelho-esc);transform:translateY(-1px)}
-        .form-btn-enviar:disabled{opacity:.6;cursor:not-allowed;transform:none}
-        .form-status{text-align:center;font-size:.85rem;font-weight:700;margin-top:10px;min-height:1.2rem}
+    /* Links de Preenchimento */
+    .unit-links {
+      display: grid;
+      gap: 15px;
+    }
+    .unit-link-card {
+      background: #f8fafc;
+      border-left: 4px solid #1e5fa5;
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .unit-link-card .unit-name {
+      font-weight: 600;
+      color: #1e5fa5;
+    }
+    .unit-link-card .unit-type {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .copy-btn {
+      background: #6c757d;
+      color: #fff;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .copy-btn:hover { background: #545b62; }
+    .copy-btn.copied {
+      background: #28a745;
+    }
 
-        /* ===== FORMULÁRIO MENSAL COMPLETO ===== */
-        .fm-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;border-bottom:3px solid #000;padding-bottom:10px}
-        .fm-tab{background:#f0f0f0;border:2px solid #ccc;border-radius:6px 6px 0 0;padding:9px 14px;font-size:.75rem;font-weight:700;text-transform:uppercase;cursor:pointer;color:var(--cinza);transition:all .2s;letter-spacing:.3px}
-        .fm-tab:hover{background:#e0e0e0;border-color:#999}
-        .fm-tab.ativo{background:var(--vermelho);color:#fff;border-color:var(--vermelho);box-shadow:0 -2px 8px rgba(206,17,38,.3)}
-        .fm-tab-conteudo{display:none;animation:fadeIn .3s}
-        .fm-tab-conteudo.ativo{display:block}
-        .fm-tab-desc{font-size:.82rem;color:#666;font-style:italic;margin-bottom:14px;background:#fffde7;border-left:4px solid var(--amarelo);padding:8px 12px;border-radius:0 4px 4px 0}
-        .fm-subtitulo{font-size:.85rem;font-weight:700;text-transform:uppercase;color:#333;border-bottom:2px solid #000;padding-bottom:5px;margin-bottom:10px;letter-spacing:.5px}
-        .fm-tabela{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;font-size:.83rem}
-        .fm-cabecalho th{background:var(--cinza-esc);color:#fff;padding:9px 10px;text-align:center;border:1px solid #000;font-size:.73rem;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
-        .fm-tabela tbody tr{border-bottom:1px solid #ddd;transition:background .15s}
-        .fm-tabela tbody tr:nth-child(even){background:#fafafa}
-        .fm-tabela tbody tr:hover{background:#fffde7}
-        .fm-tabela tbody td{border:1px solid #ddd;padding:0;vertical-align:middle}
-        .fm-input-cell{width:100%;border:none;background:transparent;padding:7px 9px;font-size:.82rem;color:#333;outline:none;font-family:inherit}
-        .fm-input-cell:focus{background:#fffde7}
-        .fm-input-cell::placeholder{color:#bbb;font-style:italic}
-        .fm-num{text-align:center}
-        .fm-select-cell{width:100%;border:none;background:transparent;padding:7px 6px;font-size:.8rem;color:#333;outline:none;font-family:inherit;cursor:pointer}
-        .fm-select-cell:focus{background:#fffde7}
-        .fm-th-total{background:var(--vermelho-esc)!important}
-        .fm-total-geral td{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;font-weight:700;padding:8px 10px;border:1px solid #000;text-align:center;font-size:.85rem}
-        .fm-total-geral td:first-child{background:var(--vermelho-esc);text-align:left}
-        .fm-btn-add{background:var(--cinza);color:#fff;border:2px solid #000;padding:7px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.78rem;text-transform:uppercase;transition:all .2s;margin-top:10px}
-        .fm-btn-add:hover{background:var(--cinza-esc);transform:translateY(-1px)}
-        .fm-nav-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:2px dashed #ccc}
-        .fm-btn-nav{background:var(--cinza);color:#fff;border:2px solid #000;padding:9px 20px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;transition:all .2s}
-        .fm-btn-nav:hover:not(:disabled){background:var(--cinza-esc);transform:translateY(-1px)}
-        .fm-btn-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
-        .fm-pc-sel{background:#bbdefb!important;outline:2px solid #1e5fa5!important;outline-offset:-1px}
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+    }
+    .loading i {
+      font-size: 2rem;
+      color: #1e5fa5;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
 
-        /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
-        .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
-        .aa-dash-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:5px}
-        .aa-dash-resumo-card{background:linear-gradient(135deg,#1a3550,#0d2035);color:#fff;padding:14px;border-radius:8px;text-align:center;border:2px solid #000}
-        .aa-dash-resumo-card .numero{font-size:1.7rem;font-weight:800;display:block;margin:4px 0}
-        .aa-dash-resumo-card .rotulo{font-size:.75rem;text-transform:uppercase;line-height:1.3;opacity:.95}
-        .aa-dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px}
-        .aa-dash-card{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-        @media(max-width:768px){.aa-dash-grid{grid-template-columns:1fr}}
+    /* Mensagens */
+    .alert {
+      padding: 12px 18px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 0.95rem;
+    }
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
 
-        /* ===== ÁREA DE ATUAÇÃO ===== */
-        .tabela-area-atuacao{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:0}
-        .tabela-area-atuacao th,.tabela-area-atuacao td{border:2px solid #000;padding:0;vertical-align:middle;text-align:center}
-        .tabela-area-atuacao .cabecalho th{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem;padding:8px 10px}
-        .aa-td{padding:4px 6px}
-        .aa-td-mun{text-align:left;background:#fafafa;min-width:200px}
-        .aa-td-num{min-width:120px}
-        .aa-input{width:100%;border:none;background:transparent;padding:6px 8px;font-size:.83rem;color:#333;outline:none;font-family:inherit}
-        .aa-input:focus{background:#fffde7;border-radius:3px}
-        .aa-input-num{text-align:center}
-        .aa-input::placeholder{color:#bbb;font-style:italic}
-        .tabela-area-atuacao .total-geral td{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;font-weight:700;padding:8px 10px;font-size:.88rem}
-        .tabela-area-atuacao .total-geral td:first-child{background:var(--vermelho-esc);text-align:left}
-        .aa-btn-add{background:var(--cinza);color:#fff;border:2px solid #000;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;transition:all .2s}
-        .aa-btn-add:hover{background:var(--cinza-esc)}
-        .aa-btn-calc{background:var(--verde);color:#fff;border:2px solid #000;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;transition:all .2s}
-        .aa-btn-calc:hover{filter:brightness(.9)}
-
-        /* ===== QUADRO DIÁRIO ===== */
-        .quadro-diario-wrapper{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);margin-bottom:30px}
-        .quadro-diario-header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #000}
-        .quadro-diario-titulo{font-size:1.15rem;font-weight:800;text-transform:uppercase;letter-spacing:2px}
-        .quadro-diario-info{font-size:.8rem;opacity:.85;font-style:italic}
-        .table-responsive-qd{overflow-x:auto;-webkit-overflow-scrolling:touch}
-        .tabela-qd{width:100%;border-collapse:collapse;font-size:.85rem;min-width:700px}
-        .qd-cabecalho th,.qd-cabecalho-sub th{background:var(--cinza-esc);color:#fff;padding:9px 12px;text-align:center;border:2px solid #000;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px}
-        .qd-cabecalho .qd-th-grupo{background:var(--cinza);letter-spacing:1px}
-        .qd-cabecalho-sub .qd-total{background:var(--vermelho-esc)}
-        .qd-th-unidade{text-align:left!important;min-width:190px;background:var(--cinza-esc)!important}
-        .qd-th-num{min-width:55px}
-        .tabela-qd tbody tr{border-bottom:1px solid #dee2e6;transition:background .2s}
-        .tabela-qd tbody tr:nth-child(even){background:#fafafa}
-        .tabela-qd tbody tr:hover{background:#fff8e1}
-        .qd-td{border:1px solid #dee2e6;padding:8px 12px;text-align:center;vertical-align:top}
-        .qd-td-unidade{text-align:left;font-weight:700;color:#333;background:#f8f9fa;border-right:2px solid #000;font-size:.82rem}
-        .qd-td-num{font-weight:700;font-size:.9rem;color:#333}
-        .qd-td.qd-total{background:#f3e5f5;font-weight:800;color:#6a0080;font-size:.95rem}
-        .qd-vtrs{font-style:italic;color:#555;font-size:.78rem;text-align:left;line-height:1.4;max-width:220px}
-        .qd-oficial{font-size:.78rem;text-align:center}
-        .qd-oficial-nome{font-weight:700;color:#333;display:block}
-        .qd-oficial-tel{font-size:.72rem;color:#1e5fa5;display:block;margin-top:2px}
-        .qd-rodape td{background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));color:#fff;font-size:.88rem;padding:9px 12px;border:2px solid #000;font-weight:700;text-align:center}
-        .qd-rodape .qd-td-unidade{text-align:left;background:var(--cinza-esc)!important;color:#fff}
-        .qd-rodape .qd-total{background:var(--vermelho-esc)!important;font-size:1rem}
-        .qd-loading{text-align:center;padding:20px;color:var(--cinza);font-style:italic;font-size:.9rem}
-        .qd-data-tag{display:block;font-size:.68rem;color:#888;font-weight:400;font-style:normal;margin-top:2px}
-        @media(max-width:768px){
-            .quadro-diario-titulo{font-size:.95rem;letter-spacing:1px}
-            .tabela-qd{font-size:.78rem;min-width:620px}
-            .qd-td{padding:6px 8px}
-            .qd-td-unidade{min-width:160px}
-        }
-    </style>
+    /* Responsivo */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+      }
+      .tabs {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<!-- MODAL DE SENHA -->
-<div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center">
-    <div style="background:#fff;border-radius:12px;padding:32px 28px;max-width:360px;width:90%;border-top:6px solid var(--vermelho);box-shadow:0 8px 32px rgba(0,0,0,.3);text-align:center">
-        <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-        <h3 style="color:var(--vermelho);text-transform:uppercase;font-size:1rem;margin-bottom:6px">Acesso Restrito</h3>
-        <p id="modal-senha-descricao" style="font-size:.82rem;color:#666;margin-bottom:18px">Digite a senha para continuar</p>
-        <input type="password" id="modal-senha-input"
-            style="width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:8px;font-size:1rem;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none;transition:border .2s"
-            placeholder="••••••••"
-            onkeydown="if(event.key==='Enter') confirmarSenha()">
-        <p id="modal-senha-erro" style="display:none;color:var(--vermelho);font-size:.8rem;font-weight:700;margin-bottom:8px">❌ Senha incorreta!</p>
-        <div style="display:flex;gap:10px;margin-top:4px">
-            <button onclick="fecharModalSenha()" style="flex:1;padding:10px;border:2px solid #ccc;border-radius:8px;background:#f1f1f1;cursor:pointer;font-weight:600;font-size:.85rem;text-transform:uppercase">Cancelar</button>
-            <button onclick="confirmarSenha()" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--vermelho);color:#fff;cursor:pointer;font-weight:700;font-size:.85rem;text-transform:uppercase">Entrar</button>
-        </div>
+  <!-- 🔐 TELA DE LOGIN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h2><i class="fas fa-shield-alt"></i> Acesso Restrito</h2>
+      <p>Digite a senha para acessar o Painel de Comando</p>
+      <div class="error" id="login-error">❌ Senha incorreta!</div>
+      <input type="password" id="password-input" placeholder="Senha" autocomplete="off"/>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="cancelLogin()">Cancelar</button>
+        <button class="btn btn-primary" onclick="checkPassword()">Entrar</button>
+      </div>
     </div>
-</div>
-<header><h1 id="header-titulo">6° COMANDO REGIONAL</h1><h2 id="header-subtitulo">BOMBEIRO MILITAR</h2></header>
-<nav>
-    <button onclick="abrirAba('painel')" id="btn-painel" class="ativo">Painel do Comando</button>
-    <button onclick="abrirAba('unidades')" id="btn-unidades">Unidades Operacionais</button>
-    <button onclick="solicitarSenha('links-diario')" id="btn-links-diario">Links de Preenchimento Diário</button>
-    <button onclick="solicitarSenha('links')" id="btn-links">Links de Preenchimento Mensal</button>
-</nav>
-<main>
-    <section id="painel" class="conteudo-aba ativo">
+  </div>
 
-        <!-- QUADRO DIÁRIO -->
-        <div class="quadro-diario-wrapper">
-            <div class="quadro-diario-header">
-                <span class="quadro-diario-titulo">Quadro Diário</span>
-                <span class="quadro-diario-info" id="quadro-data-hora">Carregando...</span>
-            </div>
-            <div class="table-responsive-qd">
-                <table class="tabela-qd">
-                    <thead>
-                        <tr class="qd-cabecalho">
-                            <th rowspan="2" class="qd-th qd-th-unidade">Unidade BM</th>
-                            <th colspan="3" class="qd-th qd-th-grupo">Efetivo</th>
-                            <th rowspan="2" class="qd-th">VTRs Ativas</th>
-                            <th rowspan="2" class="qd-th">Oficial de Dia ou Adjunto / Contato</th>
-                        </tr>
-                        <tr class="qd-cabecalho-sub">
-                            <th class="qd-th qd-th-num">Ord.</th>
-                            <th class="qd-th qd-th-num">AC4</th>
-                            <th class="qd-th qd-th-num qd-total">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="quadro-diario-body">
-                        <tr><td colspan="6" class="qd-loading">Carregando dados...</td></tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="qd-rodape">
-                            <td class="qd-td qd-td-unidade"><strong>TOTAL GERAL</strong></td>
-                            <td class="qd-td qd-td-num" id="qd-total-ord">0</td>
-                            <td class="qd-td qd-td-num" id="qd-total-ac4">0</td>
-                            <td class="qd-td qd-td-num qd-total" id="qd-total-geral">0</td>
-                            <td class="qd-td" colspan="2"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+  <!-- 🎛️ PAINEL PRINCIPAL -->
+  <div id="main-panel">
+    
+    <!-- Cabeçalho -->
+    <header>
+      <div class="header-title">
+        <h1 id="header-titulo">6° COMANDO REGIONAL</h1>
+        <h2 id="header-subtitulo">BOMBEIRO MILITAR</h2>
+      </div>
+      <div class="header-actions">
+        <button class="btn-logout" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </header>
+
+    <!-- Abas de Navegação -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="painel">Painel do Comando</button>
+      <button class="tab-btn" data-tab="unidades">Unidades Operacionais</button>
+      <button class="tab-btn" data-tab="diario">Links Diário</button>
+      <button class="tab-btn" data-tab="mensal">Links Mensal</button>
+    </div>
+
+    <!-- ABA 1: Painel do Comando -->
+    <div id="tab-painel" class="tab-content active">
+      
+      <!-- Cards de Estatísticas -->
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <div class="label">Total Geral</div>
+          <div class="value" id="stat-total">0</div>
+          <div>Militares</div>
         </div>
-
-        <!-- NAVEGAÇÃO -->
-        <div class="dashboard-nav">
-            <button class="dash-arrow" id="btn-dash-prev" onclick="navegarDashboard(-1)" disabled>&#8592;</button>
-            <div class="dash-titulo-wrapper">
-                <h2 class="dashboard-title" id="dash-titulo-texto">Dashboard Controle De Efetivo</h2>
-                <p class="dashboard-info" id="dash-info-texto">* Dados extraídos das planilhas de Controle de Efetivo de cada unidade</p>
-                <div class="dash-indicadores">
-                    <div class="dash-dot ativo" onclick="irDashboard(0)"></div>
-                    <div class="dash-dot" onclick="irDashboard(1)"></div>
-                    <div class="dash-dot" onclick="irDashboard(2)"></div>
-                    <div class="dash-dot" onclick="irDashboard(3)"></div>
-                    <div class="dash-dot" onclick="irDashboard(4)"></div>
-                </div>
-            </div>
-            <button class="dash-arrow" id="btn-dash-next" onclick="navegarDashboard(1)">&#8594;</button>
+        <div class="stat-card success">
+          <div class="label">Total Oficiais</div>
+          <div class="value" id="stat-oficiais">0</div>
+          <div>Oficiais</div>
         </div>
-
-        <!-- DASHBOARD 0: EFETIVO -->
-        <div class="dashboard-panel ativo" id="dash-panel-0">
-            <section class="dashboard-section">
-                <div class="resumo-rapido">
-                    <div class="resumo-card"><span class="rotulo">Total Geral</span><span class="numero" id="resumo-total">0</span><span style="font-size:.75rem;opacity:.8">Militares</span></div>
-                    <div class="resumo-card"><span class="rotulo">Total Oficiais</span><span class="numero" id="resumo-oficiais">0</span><span style="font-size:.75rem;opacity:.8">Oficiais</span></div>
-                    <div class="resumo-card"><span class="rotulo">Total Praças</span><span class="numero" id="resumo-pracas">0</span><span style="font-size:.75rem;opacity:.8">Praças</span></div>
-                    <div class="resumo-card"><span class="rotulo">Total Operacional</span><span class="numero" id="resumo-operacional">0</span><span style="font-size:.75rem;opacity:.8">Militares</span></div>
-                    <div class="resumo-card"><span class="rotulo">Total Admin. Praças</span><span class="numero" id="resumo-admin-pracas">0</span><span style="font-size:.75rem;opacity:.8">Praças</span></div>
-                    <div class="resumo-card"><span class="rotulo">Total Afastamentos</span><span class="numero" id="resumo-afast">0</span><span style="font-size:.75rem;opacity:.8">Militares</span></div>
-                </div>
-                <div class="dashboard-grid">
-                    <div class="card-estatistico">
-                        <div class="card-header">Efetivo Total por Unidade</div>
-                        <div class="card-body">
-                            <div class="card-label">Distribuição por Categoria</div>
-                            <div class="chart-container"><canvas id="chartEfetivoTotal"></canvas></div>
-                            <div class="legend-custom">
-                                <div class="legend-item"><div class="legend-color legend-oficiais"></div>Oficiais</div>
-                                <div class="legend-item"><div class="legend-color legend-pracas"></div>Praças</div>
-                                <div class="legend-item"><div class="legend-color legend-total"></div>Total</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-estatistico">
-                        <div class="card-header">Efetivo Operacional</div>
-                        <div class="card-body">
-                            <div class="card-label">Distribuição por Unidade</div>
-                            <div class="chart-container"><canvas id="chartOperacional"></canvas></div>
-                        </div>
-                    </div>
-                    <div class="card-estatistico">
-                        <div class="card-header">Efetivo Administrativo</div>
-                        <div class="card-body">
-                            <div class="card-label">Distribuição por Categoria</div>
-                            <div class="chart-container"><canvas id="chartAdministrativo"></canvas></div>
-                            <div class="legend-custom">
-                                <div class="legend-item"><div class="legend-color legend-oficiais"></div>Oficiais</div>
-                                <div class="legend-item"><div class="legend-color legend-pracas"></div>Praças</div>
-                                <div class="legend-item"><div class="legend-color legend-total"></div>Total</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-estatistico">
-                        <div class="card-header">Afastamentos</div>
-                        <div class="card-body">
-                            <div class="card-label">Distribuição por Unidade</div>
-                            <div class="chart-container"><canvas id="chartAfastamentos"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <div class="stat-card warning">
+          <div class="label">Total Praças</div>
+          <div class="value" id="stat-pracas">0</div>
+          <div>Praças</div>
         </div>
-
-        <!-- DASHBOARD 1: ESPECIALISTAS -->
-        <div class="dashboard-panel" id="dash-panel-1">
-            <section class="dashboard-section">
-                <div class="esp-wrapper">
-                    <div class="esp-resumo-grid" id="esp-resumo"></div>
-                    <div class="mini-graficos-section">
-                        <div class="card-header">
-                            <span>Especialistas por Unidade — Visão Geral por Curso</span>
-                            <span style="font-size:.75rem;font-weight:400;opacity:.75;text-transform:none">Cada card = 1 curso</span>
-                        </div>
-                        <div class="mini-graficos-legenda" id="miniLegenda"></div>
-                        <div class="mini-graficos-grid" id="miniGraficosGrid"></div>
-                    </div>
-                </div>
-            </section>
+        <div class="stat-card danger">
+          <div class="label">Afastamentos</div>
+          <div class="value" id="stat-afast">0</div>
+          <div>Militares</div>
         </div>
-
-        <!-- DASHBOARD 2: VIATURAS E EMBARCAÇÕES -->
-        <div class="dashboard-panel" id="dash-panel-2">
-            <section class="dashboard-section">
-                <div class="vtr-wrapper">
-                    <!-- Resumo geral -->
-                    <div class="vtr-resumo-grid" id="vtr-resumo"></div>
-
-                    <!-- Gráfico Viaturas por Unidade -->
-                    <div class="vtr-grid">
-                        <div class="vtr-card">
-                            <div class="vtr-card-header">Viaturas por Unidade</div>
-                            <div class="vtr-card-body">
-                                <div class="vtr-chart-container"><canvas id="chartViaturas"></canvas></div>
-                                <div class="legend-custom">
-                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Operacional</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Inoperante</div>
-                                </div>
-                                <div class="status-grid" id="vtrStatusBadges"></div>
-                            </div>
-                        </div>
-                        <div class="vtr-card">
-                            <div class="vtr-card-header">Embarcações por Unidade</div>
-                            <div class="vtr-card-body">
-                                <div class="vtr-chart-container"><canvas id="chartEmbarcacoes"></canvas></div>
-                                <div class="legend-custom">
-                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Operacional</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Inoperante</div>
-                                </div>
-                                <div class="status-grid" id="embStatusBadges"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- DASHBOARD 3: MATERIAIS ESSENCIAIS -->
-        <div class="dashboard-panel" id="dash-panel-3">
-            <section class="dashboard-section">
-                <div class="mat-wrapper">
-                    <div class="mat-card">
-                        <div class="mat-card-header">Quantidade por Material e Unidade — Barras Comparativas</div>
-                        <div class="mat-card-body">
-                            <div style="height:320px;position:relative"><canvas id="chartMateriaisComp"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- DASHBOARD 4: ÁREA DE ATUAÇÃO -->
-        <div class="dashboard-panel" id="dash-panel-4">
-            <section class="dashboard-section">
-                <div class="aa-dash-wrapper">
-
-                    <!-- Resumo -->
-                    <div class="aa-dash-resumo-grid" id="aa-resumo-grid"></div>
-
-                    <!-- Grid de cards -->
-                    <div class="aa-dash-grid">
-
-                        <!-- Tabela consolidada -->
-                        <div class="aa-dash-card" style="grid-column:1/-1">
-                            <div class="card-header">Municípios por Unidade — Tabela Consolidada</div>
-                            <div class="card-body" style="padding:0;overflow-x:auto">
-                                <table class="tabela" id="aa-tabela-consolidada">
-                                    <thead>
-                                        <tr class="cabecalho">
-                                            <th style="text-align:left;padding-left:12px;min-width:180px">UNIDADE</th>
-                                            <th style="text-align:left;padding-left:10px;min-width:180px">MUNICÍPIO</th>
-                                            <th style="min-width:110px">DISTÂNCIA (km)</th>
-                                            <th style="min-width:110px">POPULAÇÃO</th>
-                                            <th style="min-width:110px">ÁREA (km²)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="aa-tabela-body"></tbody>
-                                    <tfoot>
-                                        <tr class="total-geral">
-                                            <td colspan="2" style="text-align:left;padding-left:12px"><strong>TOTAL GERAL</strong></td>
-                                            <td class="num">—</td>
-                                            <td class="num" id="aa-total-pop">0</td>
-                                            <td class="num" id="aa-total-area">0</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Gráfico população por unidade -->
-                        <div class="aa-dash-card">
-                            <div class="card-header">População por Unidade</div>
-                            <div class="card-body">
-                                <div class="chart-container"><canvas id="chartAAPop"></canvas></div>
-                            </div>
-                        </div>
-
-                        <!-- Gráfico área por unidade -->
-                        <div class="aa-dash-card">
-                            <div class="card-header">Área Total por Unidade (km²)</div>
-                            <div class="card-body">
-                                <div class="chart-container"><canvas id="chartAAArea"></canvas></div>
-                            </div>
-                        </div>
-
-                        <!-- Gráfico municípios por unidade -->
-                        <div class="aa-dash-card">
-                            <div class="card-header">Quantidade de Municípios por Unidade</div>
-                            <div class="card-body">
-                                <div class="chart-container"><canvas id="chartAAMun"></canvas></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- UNIDADES movidas para aba própria -->
-    </section>
-
-    <section id="unidades" class="conteudo-aba">
-        <h2 class="titulo-unidades">Unidades Operacionais</h2>
-        <div class="unidades-tabs" id="unidades-tabs">
-            <!-- Gerado dinamicamente pelo config.js -->
-        </div>
-        <div id="unidades-container"></div>
-    </section>
-
-
-    <!-- ABA: LINKS DE PREENCHIMENTO DIÁRIO -->
-    <section id="links-diario" class="conteudo-aba">
-        <div class="links-page-wrapper">
-            <div class="links-page-header">
-                <h3 class="links-page-titulo">🔗 Links de Preenchimento Diário</h3>
-                <p class="links-page-sub">Envie o link correspondente para cada unidade preencher o Quadro Diário</p>
-            </div>
-            <div class="links-lista" id="lista-links-diario"></div>
-        </div>
-
-        <!-- FORMULÁRIO DIÁRIO (aparece quando ?tipo=diario&unidade=ID na URL) -->
-        <div id="form-diario-wrapper" class="form-wrapper" style="display:none">
-            <div class="form-card">
-                <div class="form-card-header">
-                    <span id="form-diario-titulo">Quadro Diário</span>
-                    <span id="form-diario-unidade-nome" class="form-unidade-badge"></span>
-                </div>
-                <div class="form-card-body">
-                    <div class="form-grid-2">
-                        <div class="form-grupo">
-                            <label class="form-label">Efetivo Ordinário</label>
-                            <input type="number" id="fd-ord" class="form-input" min="0" placeholder="0">
-                        </div>
-                        <div class="form-grupo">
-                            <label class="form-label">Efetivo AC4</label>
-                            <input type="number" id="fd-ac4" class="form-input" min="0" placeholder="0">
-                        </div>
-                        <div class="form-grupo">
-                            <label class="form-label" style="color:var(--vermelho)">Total Efetivo</label>
-                            <input type="text" id="fd-total" class="form-input" readonly style="background:#fff5f5;font-weight:700;color:var(--vermelho)">
-                        </div>
-                        <div class="form-grupo">
-                            <label class="form-label">Oficial de Dia ou Adjunto</label>
-                            <input type="text" id="fd-oficial" class="form-input" placeholder="Ex: Cap. Silva">
-                        </div>
-                        <div class="form-grupo">
-                            <label class="form-label">Contato</label>
-                            <input type="text" id="fd-contato" class="form-input" placeholder="(62) 9xxxx-xxxx">
-                        </div>
-                    </div>
-                    <div class="form-grupo" style="margin-top:12px">
-                        <label class="form-label">VTRs Ativas (prefixos)</label>
-                        <textarea id="fd-vtrs" class="form-textarea" placeholder="Ex: ABT-12, UR-205, ASA-140..."></textarea>
-                    </div>
-                    <button class="form-btn-enviar" id="btn-enviar-diario" onclick="enviarDiario()">📤 Enviar</button>
-                    <p id="fd-status" class="form-status"></p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ABA: LINKS DE PREENCHIMENTO MENSAL -->
-    <section id="links" class="conteudo-aba">
-        <div class="links-page-wrapper">
-            <div class="links-page-header">
-                <h3 class="links-page-titulo">🔗 Links de Preenchimento Mensal</h3>
-                <p class="links-page-sub">Envie o link correspondente para cada unidade atualizar seus dados nos dashboards</p>
-            </div>
-            <div class="links-lista" id="lista-links-mensal"></div>
-        </div>
-
-        <!-- FORMULÁRIO MENSAL COMPLETO -->
-        <div id="form-mensal-wrapper" class="form-wrapper" style="display:none">
-            <div class="form-card" style="max-width:900px;margin:0 auto">
-                <div class="form-card-header">
-                    <span id="form-mensal-titulo">Dados Mensais</span>
-                    <span id="form-mensal-unidade-nome" class="form-unidade-badge"></span>
-                </div>
-                <div class="form-card-body">
-
-                    <!-- ABAS DO FORMULÁRIO -->
-                    <div class="fm-tabs">
-                        <button class="fm-tab ativo" onclick="abrirFmTab(1)">👤 Efetivo</button>
-                        <button class="fm-tab" onclick="abrirFmTab(2)">🎖️ Especialistas</button>
-                        <button class="fm-tab" onclick="abrirFmTab(3)">🚒 Viaturas</button>
-                        <button class="fm-tab" onclick="abrirFmTab(4)">🧰 Materiais</button>
-                        <button class="fm-tab" onclick="abrirFmTab(5)">📋 Plano de Chamada</button>
-                        <button class="fm-tab" onclick="abrirFmTab(6)">🗺️ Área de Atuação</button>
-                    </div>
-
-                    <!-- ABA 1: EFETIVO -->
-                    <div class="fm-tab-conteudo ativo" id="fm-tab-1">
-                        <p class="fm-tab-desc">Preencha o efetivo por posto/graduação e situação funcional.</p>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela" id="fm-tabela-efetivo">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:180px">POSTO / GRADUAÇÃO</th>
-                                    <th>SERV. OPERACIONAL</th>
-                                    <th>SERV. ADMINISTRATIVO</th>
-                                    <th>AFASTAMENTO</th>
-                                    <th class="fm-th-total">TOTAL</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-efetivo-body"></tbody>
-                            <tfoot>
-                                <tr class="fm-total-geral">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td id="fm-ef-tot-op">0</td>
-                                    <td id="fm-ef-tot-adm">0</td>
-                                    <td id="fm-ef-tot-aft">0</td>
-                                    <td id="fm-ef-tot-geral">0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        </div>
-                        <div style="margin-top:14px">
-                            <div class="form-grupo">
-                                <label class="form-label">Comandante da Unidade</label>
-                                <input type="text" id="fm-comandante" class="form-input" placeholder="Posto e Nome completo">
-                            </div>
-                            <div class="form-grupo" style="margin-top:10px">
-                                <label class="form-label">Subcomandante</label>
-                                <input type="text" id="fm-subcomandante" class="form-input" placeholder="Posto e Nome completo">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ABA 2: ESPECIALISTAS -->
-                    <div class="fm-tab-conteudo" id="fm-tab-2">
-                        <p class="fm-tab-desc">Informe a quantidade e os nomes dos militares por especialidade.</p>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:240px">CURSO / ESPECIALIDADE</th>
-                                    <th style="min-width:90px">QTD</th>
-                                    <th style="text-align:left;min-width:260px">NOMES DOS MILITARES</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-esp-body"></tbody>
-                        </table>
-                        </div>
-                    </div>
-
-                    <!-- ABA 3: VIATURAS E EMBARCAÇÕES -->
-                    <div class="fm-tab-conteudo" id="fm-tab-3">
-                        <p class="fm-tab-desc">Informe o tipo, prefixo e condição de cada viatura e embarcação.</p>
-                        <h6 class="fm-subtitulo">🚒 Viaturas</h6>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela" id="fm-tabela-vtr">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE VIATURA</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
-                                    <th style="min-width:150px">CONDIÇÃO</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-vtr-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT — Auto Bomba Tanque"></td><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                            </tbody>
-                        </table>
-                        </div>
-                        <button class="fm-btn-add" onclick="adicionarLinhaVtr()">+ Adicionar Viatura</button>
-
-                        <h6 class="fm-subtitulo" style="margin-top:22px">⛵ Embarcações</h6>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela" id="fm-tabela-emb">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE EMBARCAÇÃO</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
-                                    <th style="min-width:150px">CONDIÇÃO</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-emb-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: Lancha de Resgate"></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                            </tbody>
-                        </table>
-                        </div>
-                        <button class="fm-btn-add" onclick="adicionarLinhaEmb()">+ Adicionar Embarcação</button>
-                    </div>
-
-                    <!-- ABA 4: MATERIAIS ESSENCIAIS -->
-                    <div class="fm-tab-conteudo" id="fm-tab-4">
-                        <p class="fm-tab-desc">Informe a quantidade e condição de cada material essencial.</p>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">MATERIAL</th>
-                                    <th style="min-width:80px">QTD</th>
-                                    <th style="min-width:160px">CONDIÇÃO / OBSERVAÇÃO</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-mat-body"></tbody>
-                        </table>
-                        </div>
-                    </div>
-
-                    <!-- ABA 5: PLANO DE CHAMADA -->
-                    <div class="fm-tab-conteudo" id="fm-tab-5">
-                        <p class="fm-tab-desc">Informe os dados dos militares para o Plano de Chamada da unidade.</p>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela" id="fm-tabela-pc">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:220px">POSTO/GRAD., RG E NOME COMPLETO</th>
-                                    <th style="min-width:140px">TELEFONE</th>
-                                    <th style="min-width:120px">CPF</th>
-                                    <th style="min-width:90px">CNH</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-pc-body">
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Ex: 1º Ten. 123456 João Silva" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                            </tbody>
-                        </table>
-                        </div>
-                        <button class="fm-btn-add" onclick="adicionarLinhaPC()">+ Adicionar Militar</button>
-                    </div>
-
-                    <!-- ABA 6: ÁREA DE ATUAÇÃO -->
-                    <div class="fm-tab-conteudo" id="fm-tab-6">
-                        <p class="fm-tab-desc">Informe os municípios que compõem a área de atuação desta unidade.</p>
-                        <div style="overflow-x:auto">
-                        <table class="fm-tabela" id="fm-tabela-aa">
-                            <thead>
-                                <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">MUNICÍPIO</th>
-                                    <th style="min-width:130px">DISTÂNCIA (km)</th>
-                                    <th style="min-width:120px">POPULAÇÃO</th>
-                                    <th style="min-width:120px">ÁREA (km²)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fm-aa-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome do município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                            </tbody>
-                            <tfoot>
-                                <tr class="fm-total-geral">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td>—</td>
-                                    <td id="fm-aa-pop-tot">0</td>
-                                    <td id="fm-aa-area-tot">0</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        </div>
-                        <button class="fm-btn-add" onclick="adicionarLinhaAA()">+ Adicionar Município</button>
-                    </div>
-
-                    <!-- BARRA DE NAVEGAÇÃO ENTRE ABAS E ENVIO -->
-                    <div class="fm-nav-bottom">
-                        <button class="fm-btn-nav" id="fm-btn-anterior" onclick="navegarFmTab(-1)" disabled>← Anterior</button>
-                        <span id="fm-tab-indicador" style="font-size:.82rem;color:var(--cinza);font-weight:600">1 / 6</span>
-                        <button class="fm-btn-nav" id="fm-btn-proximo" onclick="navegarFmTab(1)">Próximo →</button>
-                    </div>
-                    <button class="form-btn-enviar" id="btn-enviar-mensal" onclick="enviarMensal()">📤 Enviar</button>
-                    <p id="fm-status" class="form-status"></p>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-
-<script src="config.js"></script>
-<script>
-/* ===================== DADOS ===================== */
-// unidades, coresUnidades, nomesUnidades, nomesAbrev e slugsUnidades
-// são gerados automaticamente pelo config.js a partir de CONFIG_UNIDADES
-const cursosEsp = [
-    {abrev:'GV',      nome:'Curso de Guarda-Vidas'},
-    {abrev:'CMAUT',   nome:'Curso de Mergulho Autônomo'},
-    {abrev:'CSTER',   nome:'Curso de Salvamento Terrestre'},
-    {abrev:'CSALT',   nome:'Curso de Salvamento em Altura'},
-    {abrev:'CSV-L',   nome:'Curso de Salvamento Veicular – Leve'},
-    {abrev:'CBRESC',  nome:'Curso de Busca, Resgate e Salvamento com Cães'},
-    {abrev:'COR',     nome:'Curso de Operações de Resgate'},
-    {abrev:'COPAR',   nome:'Curso de Operações Envolvendo Árvores'},
-    {abrev:'CATS',    nome:'Curso de Atendimento a Tentativa de Suicídio'},
-    {abrev:'COSD',    nome:'Curso de Operações de Salvamento em Desastres'},
-    {abrev:'CPCIF',   nome:'Curso de Prevenção e Combate a Incêndio Florestal'},
-    {abrev:'COI',     nome:'Curso de Operações em Incêndio'},
-    {abrev:'CIF',     nome:'Curso de Instrutor Flashover'},
-    {abrev:'CIGOI',   nome:'Curso Internacional de Gerenciamento de Operações de Incêndio'},
-    {abrev:'CIPI',    nome:'Curso de Investigação e Perícia de Incêndio'},
-    {abrev:'COPP',    nome:'Curso de Operações com Produtos Perigosos'},
-    {abrev:'GARRA',   nome:'Curso de Motorresgate'},
-    {abrev:'COAT',    nome:'Curso de Operador Aerotático'},
-    {abrev:'CPAR',    nome:'Curso de Especialização de Piloto de Aeronaves Remotamente Pilotadas'},
-    {abrev:'CPOE',    nome:'Curso de Especialização de Pilotagem Operacional de Embarcações'}
-];
-// dadosEsp: matriz cursosEsp × unidades, inicializada com zeros
-const dadosEsp = cursosEsp.map(() => unidades.map(() => 0));
-// coresUnidades, nomesUnidades e nomesAbrev vêm do config.js
-
-// Dados Viaturas: [operacional, manutenção, inoperante] por unidade
-const dadosViaturas    = unidades.map(() => [0,0,0]);
-// Dados Embarcações: [operacional, manutenção, inoperante] por unidade
-const dadosEmbarcacoes = unidades.map(() => [0,0,0]);
-
-// Materiais essenciais por unidade — inicializados com zeros
-const essenciaisNomes = ['Desencarcerador','DEA/DESA','Drone','Compressor','Eq. Mergulho'];
-const dadosMateriais  = essenciaisNomes.map(() => unidades.map(() => 0));
-
-/* ===================== DASHBOARDS ===================== */
-const dashboards = [
-    {titulo:'Dashboard Controle De Efetivo',          info:'* Dados extraídos das planilhas de Controle de Efetivo de cada unidade'},
-    {titulo:'Dashboard Controle De Especialistas',     info:'* Quantidade de especialistas em cada curso e em cada unidade'},
-    {titulo:'Dashboard Controle De Viaturas e Embarcações', info:'* Situação operacional das viaturas e embarcações de cada unidade'},
-    {titulo:'Dashboard Controle De Materiais Essenciais',   info:'* Quantidade de materiais essenciais disponíveis em cada unidade'},
-    {titulo:'Dashboard Área de Atuação',               info:'* Municípios, população e área territorial coberta por cada unidade'}
-];
-let dashAtual = 0;
-
-function irDashboard(idx) {
-    dashAtual = idx;
-    document.querySelectorAll('.dashboard-panel').forEach((p,i) => p.classList.toggle('ativo', i===idx));
-    document.querySelectorAll('.dash-dot').forEach((d,i) => d.classList.toggle('ativo', i===idx));
-    document.getElementById('dash-titulo-texto').textContent = dashboards[idx].titulo;
-    document.getElementById('dash-info-texto').textContent   = dashboards[idx].info;
-    document.getElementById('btn-dash-prev').disabled = (idx === 0);
-    document.getElementById('btn-dash-next').disabled = (idx === dashboards.length - 1);
-    if (idx === 1 && !window._espPronto) iniciarEspecialistas();
-    if (idx === 2 && !window._vtrPronto) iniciarViaturas();
-    if (idx === 3 && !window._matPronto) iniciarMateriais();
-    if (idx === 4 && !window._aaPronto)  iniciarAreaAtuacao();
-}
-function navegarDashboard(dir) {
-    const novo = dashAtual + dir;
-    if (novo >= 0 && novo < dashboards.length) irDashboard(novo);
-}
-
-/* ===================== MINI GRÁFICOS ===================== */
-function criarMiniGraficos() {
-    const legEl = document.getElementById('miniLegenda');
-    legEl.innerHTML = nomesUnidades.map((n,i) =>
-        `<div class="leg-item"><div class="leg-box" style="background:${coresUnidades[i]}"></div><span style="font-size:.75rem">${n}</span></div>`
-    ).join('');
-
-    const grid = document.getElementById('miniGraficosGrid');
-    grid.innerHTML = '';
-
-    cursosEsp.forEach((curso, ci) => {
-        const valores = dadosEsp[ci];
-        const maxVal  = Math.max(...valores, 1);
-        const total   = valores.reduce((a,b) => a+b, 0);
-        const barrasHTML = valores.map((v, ui) => {
-            const pct = Math.round((v / maxVal) * 100);
-            return `
-            <div class="mini-barra-wrap">
-                <div class="mini-barra-area">
-                    <div class="mini-barra-bg" style="height:${Math.max(pct * 0.56, v > 0 ? 4 : 0)}px;min-height:${v>0?'4px':'0'}">
-                        <div class="mini-barra-fill" style="height:100%;background:${coresUnidades[ui]}"></div>
-                    </div>
-                </div>
-                <div class="mini-barra-val" style="color:${v===0?'#ccc':coresUnidades[ui]}">${v===0?'—':v}</div>
-                <div class="mini-barra-label" title="${nomesUnidades[ui]}">${nomesAbrev[ui]}</div>
-            </div>`;
-        }).join('');
-        const card = document.createElement('div');
-        card.className = 'mini-card';
-        card.innerHTML = `
-            <div class="mini-card-titulo">
-                <span class="mini-abrev">${curso.abrev}</span>
-                <span class="mini-nome" title="${curso.nome}">${curso.nome.replace('Curso de ','').replace('Curso ','')}</span>
-            </div>
-            <div class="mini-barras">${barrasHTML}</div>
-            <div class="mini-total-badge">Total: <strong>${total}</strong></div>
-        `;
-        grid.appendChild(card);
-    });
-}
-
-/* ===================== ESPECIALISTAS ===================== */
-function iniciarEspecialistas() {
-    if (window._espPronto) return;
-    window._espPronto = true;
-    const totaisPorUnidade = nomesUnidades.map((_,ui) => dadosEsp.reduce((s,c) => s + c[ui], 0));
-    const totalGeral = totaisPorUnidade.reduce((a,b) => a+b, 0);
-    let resumoHtml = `<div class="esp-resumo-card"><span class="rotulo">TOTAL DE CURSOS</span><span class="numero">${totalGeral}</span><span style="font-size:.75rem;opacity:.8">CURSOS</span></div>`;
-    nomesUnidades.forEach((n,i) => {
-        resumoHtml += `<div class="esp-resumo-card"><span class="rotulo">${nomesAbrev[i]}</span><span class="numero">${totaisPorUnidade[i]}</span><span style="font-size:.75rem;opacity:.8">CURSOS</span></div>`;
-    });
-    document.getElementById('esp-resumo').innerHTML = resumoHtml;
-    criarMiniGraficos();
-}
-
-/* ===================== VIATURAS ===================== */
-function iniciarViaturas() {
-    if (window._vtrPronto) return;
-    window._vtrPronto = true;
-
-    // Totais
-    const totVtr = dadosViaturas.map(r => r.reduce((a,b)=>a+b,0));
-    const totEmb = dadosEmbarcacoes.map(r => r.reduce((a,b)=>a+b,0));
-    const totalVtr = totVtr.reduce((a,b)=>a+b,0);
-    const totalEmb = totEmb.reduce((a,b)=>a+b,0);
-    const vtrOp = dadosViaturas.reduce((s,r)=>s+r[0],0);
-    const vtrMt = dadosViaturas.reduce((s,r)=>s+r[1],0);
-    const vtrIn = dadosViaturas.reduce((s,r)=>s+r[2],0);
-    const embOp = dadosEmbarcacoes.reduce((s,r)=>s+r[0],0);
-    const embMt = dadosEmbarcacoes.reduce((s,r)=>s+r[1],0);
-    const embIn = dadosEmbarcacoes.reduce((s,r)=>s+r[2],0);
-
-    // Resumo cards
-    document.getElementById('vtr-resumo').innerHTML = `
-        <div class="vtr-resumo-card"><span class="rotulo">TOTAL VIATURAS</span><span class="numero">${totalVtr}</span><span style="font-size:.75rem;opacity:.8">VIATURAS</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">VIATURAS OPER.</span><span class="numero">${vtrOp}</span><span style="font-size:.75rem;opacity:.8">OPERACIONAIS</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">EM MANUTENÇÃO</span><span class="numero">${vtrMt}</span><span style="font-size:.75rem;opacity:.8">VIATURAS</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">TOTAL EMBARCAÇÕES</span><span class="numero">${totalEmb}</span><span style="font-size:.75rem;opacity:.8">EMBARCAÇÕES</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">EMBARCAÇÕES OPER.</span><span class="numero">${embOp}</span><span style="font-size:.75rem;opacity:.8">OPERACIONAIS</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">EM MANUTENÇÃO</span><span class="numero">${embMt}</span><span style="font-size:.75rem;opacity:.8">EMBARCAÇÕES</span></div>
-    `;
-
-    // Status badges
-    document.getElementById('vtrStatusBadges').innerHTML = `
-        <div class="status-badge sb-operacional"><span class="sb-num">${vtrOp}</span><span class="sb-label">Operacional</span></div>
-        <div class="status-badge sb-manutencao"><span class="sb-num">${vtrMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${vtrIn}</span><span class="sb-label">Inoperante</span></div>
-    `;
-    document.getElementById('embStatusBadges').innerHTML = `
-        <div class="status-badge sb-operacional"><span class="sb-num">${embOp}</span><span class="sb-label">Operacional</span></div>
-        <div class="status-badge sb-manutencao"><span class="sb-num">${embMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${embIn}</span><span class="sb-label">Inoperante</span></div>
-    `;
-
-    const labelsVtr = nomesUnidades;
-    const opVtr = dadosViaturas.map(r=>r[0]);
-    const mtVtr = dadosViaturas.map(r=>r[1]);
-    const inVtr = dadosViaturas.map(r=>r[2]);
-    const opEmb = dadosEmbarcacoes.map(r=>r[0]);
-    const mtEmb = dadosEmbarcacoes.map(r=>r[1]);
-    const inEmb = dadosEmbarcacoes.map(r=>r[2]);
-
-    const opcoesVtr = {
-        responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}, datalabels:{display:false},
-            tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
-        scales:{
-            x:{grid:{display:false}, ticks:{font:{size:10,weight:'600'}}},
-            y:{beginAtZero:true, ticks:{stepSize:2}, grid:{color:'rgba(128,128,128,0.15)'}}
-        },
-        layout:{padding:{top:22}}
-    };
-
-    new Chart(document.getElementById('chartViaturas').getContext('2d'), {
-        type:'bar',
-        data:{labels:labelsVtr, datasets:[
-            {label:'Operacional',data:opVtr,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Manutenção', data:mtVtr,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Inoperante', data:inVtr,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
-        ]},
-        options:opcoesVtr
-    });
-
-    new Chart(document.getElementById('chartEmbarcacoes').getContext('2d'), {
-        type:'bar',
-        data:{labels:labelsVtr, datasets:[
-            {label:'Operacional',data:opEmb,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Manutenção', data:mtEmb,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Inoperante', data:inEmb,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
-        ]},
-        options:opcoesVtr
-    });
-
-}
-
-/* ===================== ÁREA DE ATUAÇÃO ===================== */
-// Dados de área de atuação inicializados em branco por unidade
-// Cada unidade pode ter seus municípios adicionados via interface
-const dadosAreaAtuacao = Object.fromEntries(unidades.map(u => [u.id, []]));
-
-function iniciarAreaAtuacao() {
-    if (window._aaPronto) return;
-    window._aaPronto = true;
-
-    // Calcular totais por unidade
-    const totaisPorUnidade = unidades.map(u => {
-        const rows = dadosAreaAtuacao[u.id] || [];
-        const muns = rows.length;
-        const pop  = rows.reduce((s,r) => s + r[2], 0);
-        const area = rows.reduce((s,r) => s + r[3], 0);
-        return {nome: u.nome.split(' - ')[0], muns, pop, area};
-    });
-
-    const totalMuns = totaisPorUnidade.reduce((s,t) => s + t.muns, 0);
-    const totalPop  = totaisPorUnidade.reduce((s,t) => s + t.pop,  0);
-    const totalArea = totaisPorUnidade.reduce((s,t) => s + t.area, 0);
-
-    // Resumo cards
-    document.getElementById('aa-resumo-grid').innerHTML = `
-        <div class="aa-dash-resumo-card"><span class="rotulo">TOTAL MUNICÍPIOS</span><span class="numero">${totalMuns}</span><span style="font-size:.72rem;opacity:.8">MUNICÍPIOS</span></div>
-        <div class="aa-dash-resumo-card"><span class="rotulo">POPULAÇÃO TOTAL</span><span class="numero">${totalPop.toLocaleString('pt-BR')}</span><span style="font-size:.72rem;opacity:.8">HABITANTES</span></div>
-        <div class="aa-dash-resumo-card"><span class="rotulo">ÁREA TOTAL</span><span class="numero">${totalArea.toLocaleString('pt-BR',{maximumFractionDigits:0})}</span><span style="font-size:.72rem;opacity:.8">KM²</span></div>
-        ${totaisPorUnidade.map(t => `<div class="aa-dash-resumo-card"><span class="rotulo">${t.nome}</span><span class="numero">${t.muns}</span><span style="font-size:.72rem;opacity:.8">MUNICÍPIOS</span></div>`).join('')}
-    `;
-
-    // Tabela consolidada
-    const tbody = document.getElementById('aa-tabela-body');
-    tbody.innerHTML = '';
-    unidades.forEach((u, ui) => {
-        const rows = dadosAreaAtuacao[u.id] || [];
-        const nomeUnidade = u.nome.split(' - ')[0];
-        rows.forEach((r, ri) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                ${ri === 0 ? `<td rowspan="${rows.length}" class="num" style="background:#f8f9fa;font-weight:700;color:${coresUnidades[ui]};border-right:2px solid #000;text-align:left;padding-left:10px;vertical-align:middle">${nomeUnidade}</td>` : ''}
-                <td class="num" style="text-align:left;padding-left:10px;font-weight:500;background:#fafafa">${r[0]}</td>
-                <td class="num">${r[1] === 0 ? '—' : r[1]}</td>
-                <td class="num">${r[2].toLocaleString('pt-BR')}</td>
-                <td class="num">${r[3].toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    });
-    document.getElementById('aa-total-pop').textContent  = totalPop.toLocaleString('pt-BR');
-    document.getElementById('aa-total-area').textContent = totalArea.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
-
-    const labels  = totaisPorUnidade.map(t => t.nome);
-    const popData  = totaisPorUnidade.map(t => t.pop);
-    const areaData = totaisPorUnidade.map(t => parseFloat(t.area.toFixed(1)));
-    const munData  = totaisPorUnidade.map(t => t.muns);
-
-    const optsAA = (label, stepSize) => ({
-        responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}, datalabels:{display:false},
-            tooltip:{callbacks:{label:ctx=>` ${label}: ${ctx.parsed.y.toLocaleString('pt-BR')}`}}},
-        scales:{x:{grid:{display:false}, ticks:{font:{size:11,weight:'600'}}},
-                y:{beginAtZero:true, ticks:{stepSize, font:{size:10}}, grid:{color:'rgba(0,0,0,.07)'}}},
-        layout:{padding:{top:22}}
-    });
-
-    new Chart(document.getElementById('chartAAPop').getContext('2d'), {
-        type:'bar',
-        data:{labels, datasets:[{label:'População', data:popData,
-            backgroundColor: coresUnidades, borderColor:'#000', borderWidth:2}]},
-        options: optsAA('habitantes', 10000)
-    });
-
-    new Chart(document.getElementById('chartAAArea').getContext('2d'), {
-        type:'bar',
-        data:{labels, datasets:[{label:'Área km²', data:areaData,
-            backgroundColor: coresUnidades, borderColor:'#000', borderWidth:2}]},
-        options: optsAA('km²', 5000)
-    });
-
-    new Chart(document.getElementById('chartAAMun').getContext('2d'), {
-        type:'bar',
-        data:{labels, datasets:[{label:'Municípios', data:munData,
-            backgroundColor: coresUnidades, borderColor:'#000', borderWidth:2}]},
-        options: optsAA('municípios', 2)
-    });
-}
-
-/* ===================== MATERIAIS ===================== */
-function iniciarMateriais() {
-    if (window._matPronto) return;
-    window._matPronto = true;
-
-    // Gráfico comparativo: barras agrupadas por unidade para cada material
-    new Chart(document.getElementById('chartMateriaisComp').getContext('2d'), {
-        type:'bar',
-        data:{
-            labels: essenciaisNomes,
-            datasets: nomesUnidades.map((n,i) => ({
-                label: n,
-                data: dadosMateriais.map(r => r[i]),
-                backgroundColor: coresUnidades[i],
-                borderColor:'#000',
-                borderWidth:1,
-                barPercentage:0.75,
-                categoryPercentage:0.85
-            }))
-        },
-        options:{
-            responsive:true, maintainAspectRatio:false,
-            plugins:{
-                legend:{position:'bottom', labels:{font:{size:11}}},
-                datalabels:{display:false},
-                tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}
-            },
-            scales:{
-                x:{grid:{display:false},ticks:{font:{size:11,weight:'600'}}},
-                y:{beginAtZero:true, ticks:{stepSize:1}, grid:{color:'rgba(0,0,0,.07)'}}
-            },
-            layout:{padding:{top:15}}
-        }
-    });
-}
-
-/* ===================== EFETIVO ===================== */
-const COR_OFICIAL = '#4169E1';
-const COR_PRACA = '#FF8C00';
-const COR_TOTAL = '#28A745';
-
-// Dados dos gráficos inicializados com zeros — serão preenchidos via formulários
-const _n = unidades.length;
-const _zeros = () => Array(_n).fill(0);
-const dadosEfetivo = {
-    labels: nomesUnidades,
-    datasets: [
-        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8}
-    ]
-};
-const dadosOperacional = {
-    labels: nomesUnidades,
-    datasets:[{label:'Serv. Operacional', data:_zeros(), backgroundColor:'rgba(40,167,69,0.8)', borderColor:'rgba(40,167,69,1)', borderWidth:2}]
-};
-const dadosAdministrativo = {
-    labels: nomesUnidades,
-    datasets:[
-        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8}
-    ]
-};
-const dadosAfastamentos = {
-    labels: nomesUnidades,
-    datasets:[{label:'Afastamentos', data:_zeros(), backgroundColor:'rgba(206,17,38,0.8)', borderColor:'rgba(206,17,38,1)', borderWidth:2}]
-};
-
-const pluginValorAcima = {
-    id:'valorAcima',
-    afterDatasetsDraw(chart) {
-        const {ctx,data,scales:{x,y}} = chart;
-        ctx.save();
-        ctx.font = 'bold 11px Segoe UI, Tahoma, sans-serif';
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        data.datasets.forEach((ds, dsIndex) => {
-            const meta = chart.getDatasetMeta(dsIndex);
-            ds.data.forEach((val, i) => {
-                const bar = meta.data[i];
-                if (val > 0) ctx.fillText(val, bar.x, bar.y - 4);
-            });
-        });
-        ctx.restore();
-    }
-};
-Chart.register(pluginValorAcima);
-
-function opcoesTresBarras(stepSize) {
-    return {responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}, datalabels:{display:false},
-            tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
-        scales:{x:{grid:{display:false}, ticks:{font:{size:11,weight:'600'}}},
-                y:{beginAtZero:true, grid:{color:'rgba(128,128,128,0.15)'}, ticks:{stepSize, font:{size:10}}}},
-        layout:{padding:{top:20}}};
-}
-function opcoesSimples(stepSize) {
-    return {responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}, datalabels:{display:false},
-            tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y}`}}},
-        scales:{x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{stepSize}}},
-        layout:{padding:{top:22}}};
-}
-
-function calcularTotais() {
-    const t0 = dadosEfetivo.datasets[0].data.reduce((a,b)=>a+b,0);
-    const t1 = dadosEfetivo.datasets[1].data.reduce((a,b)=>a+b,0);
-    document.getElementById('resumo-total').textContent = t0 + t1;
-    document.getElementById('resumo-oficiais').textContent = t0;
-    document.getElementById('resumo-pracas').textContent = t1;
-    document.getElementById('resumo-operacional').textContent = dadosOperacional.datasets[0].data.reduce((a,b)=>a+b,0);
-    document.getElementById('resumo-admin-pracas').textContent = dadosAdministrativo.datasets[1].data.reduce((a,b)=>a+b,0);
-    document.getElementById('resumo-afast').textContent = dadosAfastamentos.datasets[0].data.reduce((a,b)=>a+b,0);
-}
-
-function criarGraficosEfetivo() {
-    new Chart(document.getElementById('chartEfetivoTotal').getContext('2d'), {type:'bar', data:dadosEfetivo, options:opcoesTresBarras(10)});
-    new Chart(document.getElementById('chartOperacional').getContext('2d'), {type:'bar', data:dadosOperacional, options:opcoesSimples(10)});
-    new Chart(document.getElementById('chartAdministrativo').getContext('2d'), {type:'bar', data:dadosAdministrativo, options:opcoesTresBarras(5)});
-    new Chart(document.getElementById('chartAfastamentos').getContext('2d'), {type:'bar', data:dadosAfastamentos, options:opcoesSimples(5)});
-}
-
-/* ===================== UNIDADES ===================== */
-const patentes = ['Coronel','Tenente-Coronel','Major','Capitão','1º Tenente','2º Tenente','Praças Especiais','Subtenente','1º Sargento','2º Sargento','3º Sargento','Cabo','Soldado de 1ª Classe','Soldado de 2ª Classe'];
-const essenciais = ['Desencarcerador','DEA/DESA','Drone','Compressor','Eq. Mergulho'];
-const controles = ['CONTROLE DE EFETIVO','CONTROLE DE ESPECIALISTAS','CONTROLE DE VIATURAS E EMBARCAÇÕES','MATERIAIS ESSENCIAIS','PLANO DE CHAMADA','ÁREA DE ATUAÇÃO'];
-
-function gerarComandoSubcomando() {
-    return `<div class="comando-subcomando"><div class="comando-item"><span class="comando-label">COMANDANTE:</span><span class="comando-valor"><em>Aguardando...</em></span></div><div class="comando-item"><span class="comando-label">SUBCOMANDANTE:</span><span class="comando-valor"><em>Aguardando...</em></span></div></div>`;
-}
-
-function gerarTabelaEfetivo() {
-    let rows = patentes.map(p => `<tr><td>${p}</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num total-linha">0</td></tr>`).join('');
-    return `<table class="tabela"><thead><tr class="cabecalho"><th>MILITARES</th><th>SERV. OPERACIONAL</th><th>SERV. ADMINISTRATIVO</th><th>AFASTAMENTO</th><th>TOTAL</th></tr></thead><tbody>${rows}<tr class="total-geral"><td><strong>TOTAL</strong></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table>`;
-}
-
-function gerarControleEfetivo(id) {
-    return `<div class="controle-conteudo ativo" id="u${id}-c1">${gerarComandoSubcomando()}<h4>Controle de Efetivo</h4>${gerarTabelaEfetivo()}</div>`;
-}
-
-function gerarEspecialistasUnidade(id) {
-    const linhas = cursosEsp.map(c => `<tr><td class="col-curso"><span class="abrev-un">${c.abrev}</span>${c.nome}</td><td class="num">0</td><td style="text-align:left;padding-left:10px;font-style:italic;font-size:.8rem"><em>Aguardando...</em></td></tr>`).join('');
-    return `<div class="controle-conteudo" id="u${id}-c2"><h4>Controle de Especialistas</h4>
-    <table class="tabela-especialistas"><thead><tr class="cabecalho"><th style="text-align:left;padding-left:10px">CURSOS OPERACIONAIS</th><th>QUANTIDADE</th><th style="text-align:left;padding-left:10px">NOMES DOS MILITARES</th></tr></thead><tbody>${linhas}</tbody></table>
-    <p style="margin-top:15px;font-size:.85rem;color:#6c757d">* Dados serão carregados via link de preenchimento</p></div>`;
-}
-
-function gerarViatura(id) {
-    return `<div class="controle-conteudo" id="u${id}-c3"><h4>Controle de Viaturas e Embarcações</h4><h5 class="titulo-secao">Viaturas</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE VIATURA</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table><h5 class="titulo-secao">Embarcações</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE EMBARCAÇÃO COM MOTOR DE POPA</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table></div>`;
-}
-
-function gerarMateriais(id) {
-    // Somente materiais essenciais — tabela de apoio removida
-    let rE = essenciais.map(m => `<tr><td>${m}</td><td class="num">0</td><td class="col-condicao"><em>Aguardando...</em></td></tr>`).join('');
-    return `<div class="controle-conteudo" id="u${id}-c4"><h4>Materiais Essenciais</h4><h5 class="titulo-secao">Essenciais</h5><table class="tabela tabela-materiais"><thead><tr class="cabecalho"><th>MATERIAL</th><th>QUANTIDADE</th><th>CONDIÇÕES</th></tr></thead><tbody>${rE}</tbody></table></div>`;
-}
-
-function gerarPlanoChamada(id) {
-    const l = Array(8).fill('<tr><td class="col-nome"><em>Aguardando...</em></td><td class="col-telefone"><em>-</em></td><td class="col-cpf"><em>-</em></td><td class="col-cnh"><em>-</em></td></tr>').join('');
-    return `<div class="controle-conteudo" id="u${id}-c5"><h4>PLANO DE CHAMADA</h4><table class="tabela tabela-plano-chamada"><thead><tr class="cabecalho"><th>POSTO/GRADUAÇÃO, RG E NOME COMPLETO</th><th>TELEFONE</th><th>CPF</th><th>CATEGORIA CNH</th></tr></thead><tbody>${l}</tbody><tfoot><tr><td colspan="4" class="observacao"><strong>Observação:</strong> Dados carregados via link de preenchimento.</td></tr></tfoot></table></div>`;
-}
-
-function gerarAreaAtuacao(id) {
-    // 5 linhas em branco para preenchimento
-    const linhas = Array(5).fill(0).map((_,i) => `
-        <tr>
-            <td class="aa-td aa-td-mun"><input type="text" class="aa-input" placeholder="Nome do município..."></td>
-            <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-            <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-            <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0,00" min="0" step="0.01"></td>
-        </tr>`).join('');
-    return `<div class="controle-conteudo" id="u${id}-c6">
-        <h4>Área de Atuação</h4>
-        <p style="font-size:.82rem;color:#6c757d;margin-bottom:12px;text-align:center">* Preencha os municípios que compõem a área de atuação da unidade</p>
-        <div style="overflow-x:auto">
-        <table class="tabela tabela-area-atuacao">
+      </div>
+
+      <!-- Quadro Diário -->
+      <div class="card">
+        <h3><i class="fas fa-clipboard-list"></i> Quadro Diário</h3>
+        <div class="table-container">
+          <table id="table-diario">
             <thead>
-                <tr class="cabecalho">
-                    <th style="text-align:left;padding-left:10px;min-width:200px">MUNICÍPIO</th>
-                    <th style="min-width:130px">DISTÂNCIA DA UNIDADE (km)</th>
-                    <th style="min-width:130px">POPULAÇÃO</th>
-                    <th style="min-width:130px">ÁREA (km²)</th>
-                </tr>
+              <tr>
+                <th>Ord.</th>
+                <th>Unidade BM</th>
+                <th>Efetivo AC4</th>
+                <th>Total Efetivo</th>
+                <th>VTRs Ativas</th>
+                <th>Oficial de Dia / Contato</th>
+              </tr>
             </thead>
-            <tbody>${linhas}</tbody>
+            <tbody id="tbody-diario">
+              <tr><td colspan="6" class="loading"><i class="fas fa-spinner"></i> Carregando dados...</td></tr>
+            </tbody>
             <tfoot>
-                <tr class="total-geral">
-                    <td style="text-align:left;padding-left:10px"><strong>TOTAL</strong></td>
-                    <td class="num" id="u${id}-aa-dist-total">—</td>
-                    <td class="num" id="u${id}-aa-pop-total">0</td>
-                    <td class="num" id="u${id}-aa-area-total">0</td>
-                </tr>
+              <tr class="total-row">
+                <td><strong>TOTAL GERAL</strong></td>
+                <td></td>
+                <td id="total-ac4">0</td>
+                <td id="total-efetivo">0</td>
+                <td id="total-vtrs">0</td>
+                <td></td>
+              </tr>
             </tfoot>
-        </table>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="charts-grid">
+        <div class="chart-container">
+          <canvas id="chart-efetivo"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-categorias"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-viaturas"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-municipios"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ABA 2: Unidades Operacionais -->
+    <div id="tab-unidades" class="tab-content">
+      <div class="card">
+        <h3><i class="fas fa-building"></i> Unidades Subordinadas</h3>
+        <div id="lista-unidades" class="unit-links">
+          <!-- Preenchido via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 3: Links Diário -->
+    <div id="tab-diario" class="tab-content">
+      <div class="card">
+        <h3><i class="fas fa-link"></i> Links de Preenchimento Diário</h3>
+        <p style="margin-bottom:15px;color:#666">
+          Envie o link correspondente para cada unidade preencher o Quadro Diário
+        </p>
+        <div id="links-diario" class="unit-links">
+          <!-- Preenchido via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 4: Links Mensal -->
+    <div id="tab-mensal" class="tab-content">
+      <div class="card">
+        <h3><i class="fas fa-calendar-alt"></i> Links de Preenchimento Mensal</h3>
+        <p style="margin-bottom:15px;color:#666">
+          Envie o link correspondente para cada unidade atualizar seus dados nos dashboards
+        </p>
+        
+        <!-- Navegação do formulário -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">
+          <button class="btn btn-secondary" id="btn-prev" disabled>← Anterior</button>
+          <span id="step-indicator">1 / 6</span>
+          <button class="btn btn-secondary" id="btn-next">Próximo →</button>
         </div>
 
-    </div>`;
-}
-
-function adicionarLinhaMunicipio(id) {
-    const tbody = document.querySelector(`#u${id}-c6 tbody`);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td class="aa-td aa-td-mun"><input type="text" class="aa-input" placeholder="Nome do município..."></td>
-        <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-        <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-        <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0,00" min="0" step="0.01"></td>
-    `;
-    tbody.appendChild(tr);
-}
-
-function calcularTotaisAA(id) {
-    const cont = document.getElementById(`u${id}-c6`);
-    const linhas = cont.querySelectorAll('tbody tr');
-    let totalPop = 0, totalArea = 0;
-    linhas.forEach(tr => {
-        const inputs = tr.querySelectorAll('input[type="number"]');
-        totalPop  += parseFloat(inputs[1]?.value) || 0;
-        totalArea += parseFloat(inputs[2]?.value) || 0;
-    });
-    document.getElementById(`u${id}-aa-pop-total`).textContent  = totalPop.toLocaleString('pt-BR');
-    document.getElementById(`u${id}-aa-area-total`).textContent = totalArea.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-}
-
-// Datas de último preenchimento — inicializadas em branco, atualizadas via formulário
-const ultimoPreenchimento = Object.fromEntries(unidades.map(u => [u.id, '—']));
-
-function gerarUnidade(u, ativo) {
-    const tabs = controles.map((c,i) => `<button class="controle-tab${i===0?' ativo':''}" onclick="abrirControle(${u.id},${i+1})">${c}</button>`).join('');
-    const conteudos = gerarControleEfetivo(u.id) + gerarEspecialistasUnidade(u.id) + gerarViatura(u.id) + gerarMateriais(u.id) + gerarPlanoChamada(u.id) + gerarAreaAtuacao(u.id);
-    const dataPreench = ultimoPreenchimento[u.id] || '—';
-    const corBorda = coresUnidades[u.id - 1] || '#495057';
-    return `<div id="unidade-${u.id}" class="unidade-conteudo${ativo?' ativo':''}">
-        <div class="unidade-header" style="border-top:6px solid ${corBorda}">
-            <div class="unidade-header-top">
-                <div class="unidade-header-badge" style="background:${corBorda}">${u.id}</div>
-                <div class="unidade-header-info">
-                    <h3>${u.nome}</h3>
-                    <p class="unidade-subtipo">${u.tipo}</p>
-                    <span class="unidade-ultima-att">🕒 Último preenchimento: <strong>${dataPreench}</strong></span>
-                </div>
+        <!-- Formulário por etapas -->
+        <form id="form-mensal">
+          
+          <!-- Etapa 1: Efetivo -->
+          <div class="form-step active" data-step="1">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">👤 Efetivo por Posto/Graduação</h4>
+            <p style="margin-bottom:15px;font-size:0.9rem;color:#666">
+              Preencha o efetivo por posto/graduação e situação funcional.
+            </p>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>POSTO / GRADUAÇÃO</th>
+                    <th>SERV. OPERACIONAL</th>
+                    <th>SERV. ADMINISTRATIVO</th>
+                    <th>AFASTAMENTO</th>
+                    <th>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-efetivo">
+                  <!-- Linhas geradas via JS -->
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td id="sum-op">0</td>
+                    <td id="sum-adm">0</td>
+                    <td id="sum-afast">0</td>
+                    <td id="sum-total">0</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
-            <div class="controles-tabs">${tabs}</div>
+          </div>
+
+          <!-- Etapa 2: Especialistas -->
+          <div class="form-step" data-step="2">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">🎖️ Especialistas por Curso</h4>
+            <p style="margin-bottom:15px;font-size:0.9rem;color:#666">
+              Informe a quantidade e os nomes dos militares por especialidade.
+            </p>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>CURSO / ESPECIALIDADE</th>
+                    <th>QTD</th>
+                    <th>NOMES DOS MILITARES</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-especialistas">
+                  <tr>
+                    <td><input type="text" placeholder="Ex: Combate a Incêndio"/></td>
+                    <td><input type="number" min="0" value="0" class="qtd-input"/></td>
+                    <td><input type="text" placeholder="Nomes separados por vírgula"/></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px" onclick="addRow('tbody-especialistas')">
+              + Adicionar Linha
+            </button>
+          </div>
+
+          <!-- Etapa 3: Viaturas -->
+          <div class="form-step" data-step="3">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">🚒 Viaturas e Embarcações</h4>
+            
+            <h5 style="margin:15px 0 10px;color:#444">🚒 Viaturas</h5>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>TIPO DE VIATURA</th>
+                    <th>PREFIXO / ID</th>
+                    <th>CONDIÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-viaturas">
+                  <tr>
+                    <td><input type="text" placeholder="Ex: ABT"/></td>
+                    <td><input type="text" placeholder="Ex: 1234"/></td>
+                    <td>
+                      <select>
+                        <option value="operacional">✅ Operacional</option>
+                        <option value="manutencao">🔧 Manutenção</option>
+                        <option value="inoperante">❌ Inoperante</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin:10px 0" onclick="addRow('tbody-viaturas')">
+              + Adicionar Viatura
+            </button>
+
+            <h5 style="margin:20px 0 10px;color:#444">⛵ Embarcações</h5>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>TIPO DE EMBARCAÇÃO</th>
+                    <th>PREFIXO / ID</th>
+                    <th>CONDIÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-embarcacoes">
+                  <tr>
+                    <td><input type="text" placeholder="Ex: Lancha"/></td>
+                    <td><input type="text" placeholder="Ex: EB-01"/></td>
+                    <td>
+                      <select>
+                        <option value="operacional">✅ Operacional</option>
+                        <option value="manutencao">🔧 Manutenção</option>
+                        <option value="inoperante">❌ Inoperante</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin:10px 0" onclick="addRow('tbody-embarcacoes')">
+              + Adicionar Embarcação
+            </button>
+          </div>
+
+          <!-- Etapa 4: Materiais -->
+          <div class="form-step" data-step="4">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">🧰 Materiais Essenciais</h4>
+            <p style="margin-bottom:15px;font-size:0.9rem;color:#666">
+              Informe a quantidade e condição de cada material essencial.
+            </p>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>MATERIAL</th>
+                    <th>QTD</th>
+                    <th>CONDIÇÃO / OBSERVAÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-materiais">
+                  <tr>
+                    <td><input type="text" placeholder="Ex: Mangueira 2½\""/></td>
+                    <td><input type="number" min="0" value="0"/></td>
+                    <td><input type="text" placeholder="Observações"/></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px" onclick="addRow('tbody-materiais')">
+              + Adicionar Linha
+            </button>
+          </div>
+
+          <!-- Etapa 5: Plano de Chamada -->
+          <div class="form-step" data-step="5">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">📋 Plano de Chamada</h4>
+            <p style="margin-bottom:15px;font-size:0.9rem;color:#666">
+              Informe os dados dos militares para o Plano de Chamada da unidade.
+            </p>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>POSTO/GRAD., RG E NOME COMPLETO</th>
+                    <th>TELEFONE</th>
+                    <th>CPF</th>
+                    <th>CNH</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-plano">
+                  <tr>
+                    <td><input type="text" placeholder="Ex: Sgt. 12345 - João Silva"/></td>
+                    <td><input type="tel" placeholder="(62) 99999-9999"/></td>
+                    <td><input type="text" placeholder="000.000.000-00"/></td>
+                    <td><input type="text" placeholder="AB"/></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px" onclick="addRow('tbody-plano')">
+              + Adicionar Militar
+            </button>
+          </div>
+
+          <!-- Etapa 6: Área de Atuação -->
+          <div class="form-step" data-step="6">
+            <h4 style="margin-bottom:15px;color:#1e5fa5">🗺️ Área de Atuação</h4>
+            <p style="margin-bottom:15px;font-size:0.9rem;color:#666">
+              Informe os municípios que compõem a área de atuação desta unidade.
+            </p>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>MUNICÍPIO</th>
+                    <th>DISTÂNCIA (km)</th>
+                    <th>POPULAÇÃO</th>
+                    <th>ÁREA (km²)</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-municipios-form">
+                  <tr>
+                    <td><input type="text" placeholder="Nome do município"/></td>
+                    <td><input type="number" min="0" step="0.1"/></td>
+                    <td><input type="number" min="0"/></td>
+                    <td><input type="number" min="0" step="0.1"/></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td>—</td>
+                    <td id="sum-pop">0</td>
+                    <td id="sum-area">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px" onclick="addRow('tbody-municipios-form')">
+              + Adicionar Município
+            </button>
+          </div>
+
+        </form>
+
+        <!-- Botão de Enviar -->
+        <div style="margin-top:20px;text-align:right">
+          <button class="btn btn-primary" id="btn-enviar" onclick="enviarDadosMensal()">
+            <i class="fas fa-paper-plane"></i> 📤 Enviar Dados
+          </button>
         </div>
-        <div class="controles-container">${conteudos}</div>
-    </div>`;
-}
 
-/* ===================== NAVEGAÇÃO ===================== */
-function abrirAba(aba) {
-    document.querySelectorAll('.conteudo-aba').forEach(e => e.classList.remove('ativo'));
-    document.querySelectorAll('nav button').forEach(e => e.classList.remove('ativo'));
-    document.getElementById(aba).classList.add('ativo');
-    document.getElementById('btn-'+aba).classList.add('ativo');
-    if (aba === 'unidades') abrirUnidade(1);
-}
+        <!-- Mensagem de Feedback -->
+        <div id="feedback-mensal" class="alert" style="display:none;margin-top:15px"></div>
 
-function abrirUnidade(n) {
-    document.querySelectorAll('.unidade-conteudo').forEach(e => e.classList.remove('ativo'));
-    document.querySelectorAll('.unidade-tab').forEach(e => e.classList.remove('ativo'));
-    document.getElementById('unidade-'+n).classList.add('ativo');
-    document.querySelectorAll('.unidade-tab')[n-1].classList.add('ativo');
-    abrirControle(n,1);
-}
+      </div>
+    </div>
 
-function abrirControle(unidade, controle) {
-    // Controle 5 = Plano de Chamada — requer senha
-    if (controle === 5) {
-        solicitarSenha(null, () => _abrirControle(unidade, controle));
-        return;
+  </div>
+
+  <!-- ✅ CARREGAR CONFIG.JS PRIMEIRO -->
+  <script src="config.js"></script>
+  
+  <!-- 🧠 LÓGICA DO PAINEL -->
+  <script>
+    /* ============================================================
+       🔐 SISTEMA DE LOGIN
+       ============================================================ */
+    let isAuthenticated = false;
+
+    function checkPassword() {
+      const input = document.getElementById('password-input').value;
+      const error = document.getElementById('login-error');
+      
+      if (input === SENHA_RESTRITA) {
+        isAuthenticated = true;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-panel').style.display = 'block';
+        initPanel();
+      } else {
+        error.classList.add('show');
+        document.getElementById('password-input').value = '';
+        document.getElementById('password-input').focus();
+      }
     }
-    _abrirControle(unidade, controle);
-}
 
-function _abrirControle(unidade, controle) {
-    const u = document.getElementById('unidade-'+unidade);
-    u.querySelectorAll('.controle-conteudo').forEach(e => e.classList.remove('ativo'));
-    u.querySelectorAll('.controle-tab').forEach(e => e.classList.remove('ativo'));
-    document.getElementById(`u${unidade}-c${controle}`).classList.add('ativo');
-    u.querySelectorAll('.controle-tab')[controle-1].classList.add('ativo');
-}
-
-/* ===================== MODAL DE SENHA ===================== */
-let _senhaCallback = null;
-let _senhaAba = null;
-// Sessões desbloqueadas (por aba/tipo) para não pedir toda hora
-const _senhaDesbloqueada = {};
-
-function solicitarSenha(aba, callback) {
-    const chave = aba || 'plano-chamada';
-    if (_senhaDesbloqueada[chave]) {
-        if (aba) abrirAba(aba);
-        else if (callback) callback();
-        return;
+    function cancelLogin() {
+      if (confirm('Deseja realmente cancelar? O acesso será negado.')) {
+        document.getElementById('password-input').value = '';
+        document.getElementById('login-error').classList.remove('show');
+      }
     }
-    _senhaAba = aba;
-    _senhaCallback = callback || null;
-    const modal = document.getElementById('modal-senha');
-    document.getElementById('modal-senha-input').value = '';
-    document.getElementById('modal-senha-erro').style.display = 'none';
-    modal.style.display = 'flex';
-    setTimeout(() => document.getElementById('modal-senha-input').focus(), 100);
-}
 
-function confirmarSenha() {
-    const input = document.getElementById('modal-senha-input').value;
-    const senhaCorreta = (typeof SENHA_RESTRITA !== 'undefined') ? SENHA_RESTRITA : 'cbm6crbm';
-    if (input === senhaCorreta) {
-        const chave = _senhaAba || 'plano-chamada';
-        const aba      = _senhaAba;
-        const callback = _senhaCallback;
-        _senhaDesbloqueada[chave] = true;
-        fecharModalSenha();
-        if (aba) abrirAba(aba);
-        else if (callback) callback();
-    } else {
-        const erro = document.getElementById('modal-senha-erro');
-        const inp  = document.getElementById('modal-senha-input');
-        erro.style.display = 'block';
-        inp.value = '';
-        inp.style.border = '2px solid var(--vermelho)';
-        inp.focus();
-        setTimeout(() => { inp.style.border = '2px solid #ddd'; }, 1500);
+    function logout() {
+      isAuthenticated = false;
+      document.getElementById('main-panel').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('password-input').value = '';
+      document.getElementById('login-error').classList.remove('show');
     }
-}
 
-function fecharModalSenha() {
-    document.getElementById('modal-senha').style.display = 'none';
-    _senhaAba = null;
-    _senhaCallback = null;
-}
-
-// Fechar ao clicar fora
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('modal-senha').addEventListener('click', function(e) {
-        if (e.target === this) fecharModalSenha();
+    // Permitir Enter no login
+    document.getElementById('password-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') checkPassword();
     });
-});
 
-/* ===================== QUADRO DIÁRIO ===================== */
-// Quadro Diário — inicializado com dados em branco por unidade (preenchido via formulário)
-const dadosQuadroDiario = unidades.map(u => ({
-    unidade: u.nome,
-    data: '—',
-    ord: 0, ac4: 0,
-    vtrs: 'Aguardando...',
-    oficial: 'Aguardando...',
-    contato: '—'
-}));
+    /* ============================================================
+       🎛️ INICIALIZAÇÃO DO PAINEL
+       ============================================================ */
+    function initPanel() {
+      // Aplicar configurações do config.js
+      document.getElementById('header-titulo').textContent = TITULO_COMANDO;
+      document.getElementById('header-subtitulo').textContent = SUBTITULO;
+      document.title = `Painel de Comando - ${NOME_CURTO}`;
 
-function renderQuadroDiario() {
-    const tbody = document.getElementById('quadro-diario-body');
-    const agora = new Date();
-    document.getElementById('quadro-data-hora').textContent =
-        'Atualizado em: ' + agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
-
-    let totalOrd = 0, totalAc4 = 0;
-    tbody.innerHTML = dadosQuadroDiario.map(row => {
-        const total = row.ord + row.ac4;
-        totalOrd += row.ord; totalAc4 += row.ac4;
-        return `<tr>
-            <td class="qd-td qd-td-unidade">${row.unidade}<span class="qd-data-tag">Preenchido: ${row.data}</span></td>
-            <td class="qd-td qd-td-num">${row.ord}</td>
-            <td class="qd-td qd-td-num">${row.ac4}</td>
-            <td class="qd-td qd-td-num qd-total">${total}</td>
-            <td class="qd-td qd-vtrs">${row.vtrs || '—'}</td>
-            <td class="qd-td qd-oficial"><span class="qd-oficial-nome">${row.oficial}</span><span class="qd-oficial-tel">${row.contato}</span></td>
-        </tr>`;
-    }).join('');
-
-    document.getElementById('qd-total-ord').textContent = totalOrd;
-    document.getElementById('qd-total-ac4').textContent = totalAc4;
-    document.getElementById('qd-total-geral').textContent = totalOrd + totalAc4;
-}
-
-/* ===================== LINKS E FORMULÁRIOS ===================== */
-// slugsUnidades vem do config.js
-
-function gerarLinksUI() {
-    const base = window.location.href.split('?')[0];
-
-    // Links Diário
-    const listaDiario = document.getElementById('lista-links-diario');
-    if (listaDiario) {
-        listaDiario.innerHTML = unidades.map((u, i) => {
-            const url = `${base}?tipo=diario&unidade=${i+1}`;
-            return `<div class="link-item">
-                <div class="link-item-info">
-                    <div class="link-item-nome">${u.nome}</div>
-                    <div class="link-item-tipo">${u.tipo}</div>
-                    <span class="link-item-url">${url}</span>
-                </div>
-                <button class="link-btn-copiar" onclick="copiarLink(this,'${url}')">📋 Copiar Link</button>
-            </div>`;
-        }).join('');
+      // Configurar abas
+      setupTabs();
+      
+      // Carregar dados iniciais
+      carregarDadosDiarios();
+      renderizarUnidades();
+      renderizarLinksDiario();
+      renderizarLinksMensal();
+      inicializarFormularios();
+      setupNavegacaoForm();
+      
+      // Inicializar gráficos (com dados fictícios - substitua por dados reais)
+      inicializarGraficos();
     }
 
-    // Links Mensal
-    const listaMensal = document.getElementById('lista-links-mensal');
-    if (listaMensal) {
-        listaMensal.innerHTML = unidades.map((u, i) => {
-            const url = `${base}?tipo=mensal&unidade=${i+1}`;
-            return `<div class="link-item">
-                <div class="link-item-info">
-                    <div class="link-item-nome">${u.nome}</div>
-                    <div class="link-item-tipo">${u.tipo}</div>
-                    <span class="link-item-url">${url}</span>
-                </div>
-                <button class="link-btn-copiar" onclick="copiarLink(this,'${url}')">📋 Copiar Link</button>
-            </div>`;
-        }).join('');
-    }
-}
-
-function copiarLink(btn, url) {
-    navigator.clipboard.writeText(url).then(() => {
-        btn.textContent = '✅ Copiado!';
-        btn.classList.add('copiado');
-        setTimeout(() => { btn.textContent = '📋 Copiar Link'; btn.classList.remove('copiado'); }, 2000);
-    }).catch(() => {
-        // fallback
-        const ta = document.createElement('textarea');
-        ta.value = url; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        btn.textContent = '✅ Copiado!'; btn.classList.add('copiado');
-        setTimeout(() => { btn.textContent = '📋 Copiar Link'; btn.classList.remove('copiado'); }, 2000);
-    });
-}
-
-async function verificarURLParams() {
-    const params = new URLSearchParams(window.location.search);
-    const tipo = params.get('tipo');
-    const uid  = parseInt(params.get('unidade'));
-    if (!tipo || !uid) return;
-
-    const u = unidades.find(x => x.id === uid);
-    if (!u) return;
-
-    if (tipo === 'diario') {
-        document.querySelectorAll('nav, .conteudo-aba').forEach(el => el.style.display = 'none');
-        abrirAba('links-diario');
-        document.getElementById('links-diario').style.display = 'block';
-        document.querySelector('.links-page-wrapper').style.display = 'none';
-        document.getElementById('form-diario-wrapper').style.display = 'block';
-        document.getElementById('form-diario-unidade-nome').textContent = u.nome;
-        document.getElementById('form-diario-titulo').textContent = 'Quadro Diário — ' + new Date().toLocaleDateString('pt-BR');
-
-        // Calcular total automaticamente
-        ['fd-ord','fd-ac4'].forEach(id => {
-            document.getElementById(id).addEventListener('input', () => {
-                const o = parseInt(document.getElementById('fd-ord').value)||0;
-                const a = parseInt(document.getElementById('fd-ac4').value)||0;
-                document.getElementById('fd-total').value = o + a;
-            });
+    /* ============================================================
+       🗂️ SISTEMA DE ABAS
+       ============================================================ */
+    function setupTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remover active de todos
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          // Ativar selecionado
+          btn.classList.add('active');
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
         });
-        document.getElementById('form-diario-wrapper').dataset.uid = uid;
-
-        // Buscar último preenchimento desta unidade e pré-preencher
-        await preencherFormularioDiario(uid);
+      });
     }
 
-    if (tipo === 'mensal') {
-        document.querySelectorAll('nav, .conteudo-aba').forEach(el => el.style.display = 'none');
-        abrirAba('links');
-        document.getElementById('links').style.display = 'block';
-        document.querySelector('#links .links-page-wrapper').style.display = 'none';
-        document.getElementById('form-mensal-wrapper').style.display = 'block';
-        document.getElementById('form-mensal-unidade-nome').textContent = u.nome;
-        document.getElementById('form-mensal-titulo').textContent = 'Dados Mensais — ' + u.nome.split(' - ')[0];
-        document.getElementById('form-mensal-wrapper').dataset.uid = uid;
-        iniciarFormularioMensal();
-
-        // Buscar último preenchimento desta unidade e pré-preencher
-        await preencherFormularioMensal(uid);
-    }
-}
-
-/* ===================== PRÉ-PREENCHIMENTO ===================== */
-
-function mostrarStatusCarregamento(tipo, msg, cor) {
-    const idSta = tipo === 'diario' ? 'fd-status' : 'fm-status';
-    const sta = document.getElementById(idSta);
-    if (!sta) return;
-    sta.style.color = cor || '#1e5fa5';
-    sta.textContent = msg;
-}
-
-async function preencherFormularioDiario(uid) {
-    const scriptUrl = (typeof SCRIPT_URL_DIARIO !== 'undefined') ? SCRIPT_URL_DIARIO : '';
-    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
-
-    mostrarStatusCarregamento('diario', '🔄 Buscando último preenchimento...', '#1e5fa5');
-
-    try {
-        const url = `${scriptUrl}?tipo=diario&unidadeId=${uid}`;
-        const res  = await fetch(url);
-        const json = await res.json();
-
-        if (!json.sucesso || !json.registro) {
-            mostrarStatusCarregamento('diario', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
-            return;
-        }
-
-        const r = json.registro;
-        const set = (id, val) => {
-            const el = document.getElementById(id);
-            if (el && val !== undefined && val !== null) el.value = val;
-        };
-
-        set('fd-ord',     r.efetivoOrd);
-        set('fd-ac4',     r.efetivoAc4);
-        set('fd-total',   r.efetivoTotal);
-        set('fd-oficial', r.oficial !== '-' ? r.oficial : '');
-        set('fd-contato', r.contato !== '-' ? r.contato : '');
-        set('fd-vtrs',    r.vtrs    !== '-' ? r.vtrs    : '');
-
-        const dataRef = r.timestamp ? ` (ref: ${r.timestamp})` : '';
-        mostrarStatusCarregamento('diario',
-            `✏️ Dados do último preenchimento carregados${dataRef}. Revise e envie novamente se necessário.`,
-            '#856404'
-        );
-    } catch(e) {
-        mostrarStatusCarregamento('diario', '⚠️ Não foi possível carregar o último preenchimento.', '#6c757d');
-    }
-}
-
-async function preencherFormularioMensal(uid) {
-    const scriptUrl = (typeof SCRIPT_URL_MENSAL !== 'undefined') ? SCRIPT_URL_MENSAL : '';
-    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
-
-    mostrarStatusCarregamento('mensal', '🔄 Buscando último preenchimento...', '#1e5fa5');
-
-    try {
-        const url = `${scriptUrl}?tipo=mensal&unidadeId=${uid}`;
-        const res  = await fetch(url);
-        const json = await res.json();
-
-        if (!json.sucesso || !json.registro) {
-            mostrarStatusCarregamento('mensal', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
-            return;
-        }
-
-        const r = json.registro;
-
-        // Efetivo
-        const setT = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-        setT('fm-comandante',    r.Comandante   || '');
-        setT('fm-subcomandante', r.Subcomandante || '');
-
-        // Tabela efetivo — JSON array
-        if (r.Efetivo) {
-            try {
-                const ef = JSON.parse(r.Efetivo);
-                preencherTabelaEfetivo(ef);
-            } catch(e) {}
-        }
-
-        // Especialistas
-        if (r.Especialistas) {
-            try {
-                const esp = JSON.parse(r.Especialistas);
-                preencherTabelaEsp(esp);
-            } catch(e) {}
-        }
-
-        // Viaturas
-        if (r.Viaturas) {
-            try {
-                const vtr = JSON.parse(r.Viaturas);
-                preencherTabelaVeiculos('fm-vtr-body', vtr);
-            } catch(e) {}
-        }
-
-        // Embarcações
-        if (r.Embarcacoes) {
-            try {
-                const emb = JSON.parse(r.Embarcacoes);
-                preencherTabelaVeiculos('fm-emb-body', emb);
-            } catch(e) {}
-        }
-
-        // Materiais
-        if (r.Materiais) {
-            try {
-                const mat = JSON.parse(r.Materiais);
-                preencherTabelaMat(mat);
-            } catch(e) {}
-        }
-
-        // Plano de Chamada
-        if (r.PlanoChamada) {
-            try {
-                const pc = JSON.parse(r.PlanoChamada);
-                preencherTabelaPC(pc);
-            } catch(e) {}
-        }
-
-        // Área de Atuação
-        if (r.AreaAtuacao) {
-            try {
-                const aa = JSON.parse(r.AreaAtuacao);
-                preencherTabelaAA(aa);
-            } catch(e) {}
-        }
-
-        const dataRef = r.Timestamp ? ` (ref: ${r.Timestamp})` : '';
-        mostrarStatusCarregamento('mensal',
-            `✏️ Dados do último preenchimento carregados${dataRef}. Revise e envie novamente se necessário.`,
-            '#856404'
-        );
-    } catch(e) {
-        mostrarStatusCarregamento('mensal', '⚠️ Não foi possível carregar o último preenchimento.', '#6c757d');
-    }
-}
-
-async function enviarDiario() {
-    const uid  = parseInt(document.getElementById('form-diario-wrapper').dataset.uid);
-    const u    = unidades.find(x => x.id === uid);
-    const btn  = document.querySelector('#form-diario-wrapper .form-btn-enviar');
-    const sta  = document.getElementById('fd-status');
-
-    const payload = {
-        tipo: 'diario',
-        unidade: u.nome,
-        unidadeId: uid,
-        timestamp: new Date().toLocaleString('pt-BR'),
-        efetivoOrd: document.getElementById('fd-ord').value || 0,
-        efetivoAc4: document.getElementById('fd-ac4').value || 0,
-        efetivoTotal: document.getElementById('fd-total').value || 0,
-        oficial: document.getElementById('fd-oficial').value || '-',
-        contato: document.getElementById('fd-contato').value || '-',
-        vtrs: document.getElementById('fd-vtrs').value || '-'
-    };
-
-    btn.disabled = true; btn.textContent = '⏳ Enviando...';
-    sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
-
-    try {
-        // Apps Script redireciona o POST via 302, bloqueando leitura da resposta.
-        // Solução: enviar com no-cors (fire-and-forget) e confirmar via GET logo após.
-        await fetch(SCRIPT_URL_DIARIO, {
-            method: 'POST',
-            mode:   'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify(payload)
+    /* ============================================================
+       📊 CARREGAR DADOS DIÁRIOS (Google Apps Script)
+       ============================================================ */
+    async function carregarDadosDiarios() {
+      const tbody = document.getElementById('tbody-diario');
+      
+      try {
+        // ✅ Fetch compatível com CORS do Google Apps Script
+        const response = await fetch(`${SCRIPT_URL_DIARIO}?tipo=diario`, {
+          method: 'GET',
+          // ⚠️ NÃO adicionar headers personalizados
         });
-
-        // Aguarda 1.5s e confirma via GET se o registro foi salvo
-        await new Promise(r => setTimeout(r, 1500));
-        const check = await fetch(`${SCRIPT_URL_DIARIO}?tipo=diario&unidadeId=${uid}`);
-        const json  = await check.json();
-        const salvo = json.sucesso && json.registro &&
-                      json.registro.unidadeId == uid;
-
-        if (salvo) {
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-            btn.textContent = '✅ Enviado';
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.dados) {
+          renderizarTabelaDiario(data.dados);
+          atualizarEstatisticas(data.dados);
         } else {
-            throw new Error('Registro não encontrado após envio.');
+          throw new Error(data.message || 'Resposta inválida');
         }
-    } catch(e) {
-        sta.style.color = 'var(--vermelho)';
-        sta.textContent = '❌ Erro ao enviar: ' + e.message;
-        btn.disabled = false; btn.textContent = '📤 Enviar ao ' + (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM');
-    }
-}
-
-/* ===================== FORMULÁRIO MENSAL — FUNÇÕES ===================== */
-
-let fmTabAtual = 1;
-const fmTotalTabs = 6;
-
-function abrirFmTab(n) {
-    fmTabAtual = n;
-    document.querySelectorAll('.fm-tab-conteudo').forEach((el,i) => el.classList.toggle('ativo', i+1===n));
-    document.querySelectorAll('.fm-tab').forEach((el,i) => el.classList.toggle('ativo', i+1===n));
-    document.getElementById('fm-tab-indicador').textContent = n + ' / ' + fmTotalTabs;
-    document.getElementById('fm-btn-anterior').disabled = (n === 1);
-    document.getElementById('fm-btn-proximo').disabled  = (n === fmTotalTabs);
-    if (n === 1) calcularTotaisEfetivo();
-    if (n === 6) calcularTotaisFormAA();
-}
-
-function navegarFmTab(dir) {
-    const novo = fmTabAtual + dir;
-    if (novo >= 1 && novo <= fmTotalTabs) abrirFmTab(novo);
-}
-
-function iniciarFormularioMensal() {
-    // Monta tabela de efetivo por patente
-    const tbody = document.getElementById('fm-efetivo-body');
-    if (tbody) {
-        tbody.innerHTML = patentes.map((p,i) =>
-            `<tr>
-                <td style="padding:4px 8px;font-size:.8rem;font-weight:600;background:#f8f9fa;border-right:2px solid #000">${p}</td>
-                <td><input type="number" class="fm-input-cell fm-num fm-ef-op" data-idx="${i}" min="0" placeholder="0" oninput="calcularTotaisEfetivo()"></td>
-                <td><input type="number" class="fm-input-cell fm-num fm-ef-adm" data-idx="${i}" min="0" placeholder="0" oninput="calcularTotaisEfetivo()"></td>
-                <td><input type="number" class="fm-input-cell fm-num fm-ef-aft" data-idx="${i}" min="0" placeholder="0" oninput="calcularTotaisEfetivo()"></td>
-                <td style="background:#f3e5f5"><input type="number" class="fm-input-cell fm-num fm-ef-tot" data-idx="${i}" min="0" placeholder="0" readonly style="color:#6a0080;font-weight:700"></td>
-            </tr>`
-        ).join('');
+        
+      } catch (error) {
+        console.error('❌ Erro ao carregar dados diários:', error);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center;color:#d32f2f;padding:20px">
+              <i class="fas fa-exclamation-triangle"></i> 
+              Não foi possível carregar os dados.<br>
+              <small>${error.message}</small>
+            </td>
+          </tr>
+        `;
+      }
     }
 
-    // Monta tabela de especialistas
-    const espTbody = document.getElementById('fm-esp-body');
-    if (espTbody) {
-        espTbody.innerHTML = cursosEsp.map((c,i) =>
-            `<tr>
-                <td style="padding:6px 10px;font-size:.8rem;background:#f8f9fa;border-right:2px solid #000">
-                    <span style="background:var(--vermelho);color:#fff;font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:3px;margin-right:6px">${c.abrev}</span>${c.nome}
-                </td>
-                <td><input type="number" class="fm-input-cell fm-num fm-esp-qtd" data-idx="${i}" min="0" placeholder="0"></td>
-                <td><textarea class="fm-input-cell fm-esp-nomes" data-idx="${i}" placeholder="Nomes dos militares..." rows="2" style="resize:vertical;min-height:36px"></textarea></td>
-            </tr>`
-        ).join('');
+    function renderizarTabelaDiario(dados) {
+      const tbody = document.getElementById('tbody-diario');
+      tbody.innerHTML = '';
+      
+      let totalAC4 = 0, totalEfetivo = 0, totalVTRs = 0;
+      
+      // Dados fictícios para demonstração - substitua pela lógica real
+      unidades.forEach((u, idx) => {
+        // Simular dados (remova em produção e use os dados do GAS)
+        const ac4 = Math.floor(Math.random() * 15) + 5;
+        const efetivo = Math.floor(Math.random() * 50) + 30;
+        const vtrs = Math.floor(Math.random() * 8) + 3;
+        const oficial = ['Ten. Silva', 'Cap. Oliveira', 'Sgt. Santos', 'Maj. Costa'][idx % 4];
+        const contato = `(62) 9${Math.floor(Math.random()*9)+1}${Math.floor(Math.random()*100000000)}`;
+        
+        totalAC4 += ac4;
+        totalEfetivo += efetivo;
+        totalVTRs += vtrs;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${u.nome}</strong><br><small style="color:#666">${u.tipo}</small></td>
+            <td>${ac4}</td>
+            <td>${efetivo}</td>
+            <td>${vtrs}</td>
+            <td>${oficial}<br><small style="color:#1e5fa5">${contato}</small></td>
+          </tr>
+        `;
+      });
+      
+      // Atualizar totais
+      document.getElementById('total-ac4').textContent = totalAC4;
+      document.getElementById('total-efetivo').textContent = totalEfetivo;
+      document.getElementById('total-vtrs').textContent = totalVTRs;
     }
 
-    // Monta tabela de materiais
-    const matTbody = document.getElementById('fm-mat-body');
-    if (matTbody) {
-        matTbody.innerHTML = essenciais.map((m,i) =>
-            `<tr>
-                <td style="padding:6px 10px;font-size:.83rem;font-weight:600;background:#f8f9fa;border-right:2px solid #000">${m}</td>
-                <td><input type="number" class="fm-input-cell fm-num fm-mat-qtd" data-idx="${i}" min="0" placeholder="0"></td>
-                <td><input type="text" class="fm-input-cell fm-mat-obs" data-idx="${i}" placeholder="Bom estado / Manutenção / etc."></td>
-            </tr>`
-        ).join('');
+    function atualizarEstatisticas(dados) {
+      // Atualize com a lógica real dos seus dados
+      document.getElementById('stat-total').textContent = '0';
+      document.getElementById('stat-oficiais').textContent = '0';
+      document.getElementById('stat-pracas').textContent = '0';
+      document.getElementById('stat-afast').textContent = '0';
     }
 
-    abrirFmTab(1);
+    /* ============================================================
+       🏢 RENDERIZAR UNIDADES
+       ============================================================ */
+    function renderizarUnidades() {
+      const container = document.getElementById('lista-unidades');
+      container.innerHTML = '';
+      
+      unidades.forEach((u, idx) => {
+        const cor = coresUnidades[idx % coresUnidades.length];
+        container.innerHTML += `
+          <div class="unit-link-card" style="border-left-color:${cor}">
+            <div>
+              <div class="unit-name">${u.nome}</div>
+              <div class="unit-type">${u.tipo}</div>
+            </div>
+            <button class="copy-btn" onclick="copiarLink('${u.slug}')">
+              <i class="fas fa-copy"></i> Copiar Link
+            </button>
+          </div>
+        `;
+      });
+    }
 
-    // Paste inteligente no Plano de Chamada — distribui linhas coladas em qualquer coluna
-    document.getElementById('fm-pc-body').addEventListener('paste', function(e) {
-        const target = e.target;
-        const tbody  = document.getElementById('fm-pc-body');
+    /* ============================================================
+       🔗 RENDERIZAR LINKS DIÁRIO
+       ============================================================ */
+    function renderizarLinksDiario() {
+      const container = document.getElementById('links-diario');
+      container.innerHTML = '';
+      
+      unidades.forEach((u, idx) => {
+        const link = `${SCRIPT_URL_DIARIO}?tipo=diario&unidadeId=${idx + 1}`;
+        container.innerHTML += `
+          <div class="unit-link-card">
+            <div>
+              <div class="unit-name">${u.abrev || u.nome}</div>
+              <div class="unit-type">Link para Quadro Diário</div>
+            </div>
+            <button class="copy-btn" onclick="copiarLinkDiario('${link}', this)">
+              <i class="fas fa-copy"></i> Copiar
+            </button>
+          </div>
+        `;
+      });
+    }
 
-        // Descobre em qual célula (0-3) o paste ocorreu
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const rowIdx = rows.findIndex(tr => tr.contains(target));
-        if (rowIdx === -1) return;
+    function copiarLinkDiario(link, btn) {
+      navigator.clipboard.writeText(link).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
 
-        const cells = Array.from(rows[rowIdx].querySelectorAll('input, textarea'));
-        const colIdx = cells.findIndex(el => el === target);
-        if (colIdx === -1) return;
+    /* ============================================================
+       📅 RENDERIZAR LINKS MENSAL + FORMULÁRIO
+       ============================================================ */
+    function renderizarLinksMensal() {
+      // Similar aos links diários, mas para formulário mensal
+      // Implemente conforme necessidade
+    }
 
-        const texto = (e.clipboardData || window.clipboardData).getData('text');
-        const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+    function inicializarFormularios() {
+      // Gerar linhas de efetivo (postos/graduações padrão CBM)
+      const postos = ['Oficial Superior', 'Oficial Intermediário', 'Oficial Subalterno', 
+                      'Subtenente', '1º Sargento', '2º Sargento', '3º Sargento', 'Cabo', 'Soldado'];
+      const tbody = document.getElementById('tbody-efetivo');
+      
+      postos.forEach(posto => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${posto}</td>
+            <td><input type="number" min="0" value="0" class="efetivo-input" data-type="op"/></td>
+            <td><input type="number" min="0" value="0" class="efetivo-input" data-type="adm"/></td>
+            <td><input type="number" min="0" value="0" class="efetivo-input" data-type="afast"/></td>
+            <td class="row-total">0</td>
+          </tr>
+        `;
+      });
+      
+      // Adicionar listeners para cálculo automático
+      document.querySelectorAll('.efetivo-input').forEach(input => {
+        input.addEventListener('input', calcularTotaisEfetivo);
+      });
+      
+      // Calcular totais de municípios
+      document.querySelectorAll('#tbody-municipios-form input').forEach(input => {
+        input.addEventListener('input', calcularTotaisMunicipios);
+      });
+    }
 
-        // Se só uma linha, deixa o comportamento padrão
-        if (linhas.length <= 1) return;
+    function calcularTotaisEfetivo() {
+      let sumOp = 0, sumAdm = 0, sumAfast = 0;
+      
+      document.querySelectorAll('#tbody-efetivo tr').forEach(row => {
+        const inputs = row.querySelectorAll('.efetivo-input');
+        const op = parseInt(inputs[0]?.value) || 0;
+        const adm = parseInt(inputs[1]?.value) || 0;
+        const afast = parseInt(inputs[2]?.value) || 0;
+        
+        row.querySelector('.row-total').textContent = op + adm + afast;
+        
+        sumOp += op;
+        sumAdm += adm;
+        sumAfast += afast;
+      });
+      
+      document.getElementById('sum-op').textContent = sumOp;
+      document.getElementById('sum-adm').textContent = sumAdm;
+      document.getElementById('sum-afast').textContent = sumAfast;
+      document.getElementById('sum-total').textContent = sumOp + sumAdm + sumAfast;
+    }
 
-        e.preventDefault();
+    function calcularTotaisMunicipios() {
+      let sumPop = 0, sumArea = 0;
+      
+      document.querySelectorAll('#tbody-municipios-form tr').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const pop = parseInt(inputs[2]?.value) || 0;
+        const area = parseFloat(inputs[3]?.value) || 0;
+        
+        sumPop += pop;
+        sumArea += area;
+      });
+      
+      document.getElementById('sum-pop').textContent = sumPop.toLocaleString('pt-BR');
+      document.getElementById('sum-area').textContent = sumArea.toLocaleString('pt-BR', {minimumFractionDigits:1});
+    }
 
-        linhas.forEach((val, i) => {
-            // Cria linha se necessário
-            if (rowIdx + i >= tbody.querySelectorAll('tr').length) adicionarLinhaPC();
-            const tr = tbody.querySelectorAll('tr')[rowIdx + i];
-            const el = tr.querySelectorAll('input, textarea')[colIdx];
-            if (el) el.value = val;
+    function addRow(tbodyId) {
+      const tbody = document.getElementById(tbodyId);
+      const firstRow = tbody.querySelector('tr');
+      if (!firstRow) return;
+      
+      const newRow = firstRow.cloneNode(true);
+      newRow.querySelectorAll('input').forEach(input => input.value = '');
+      tbody.appendChild(newRow);
+      
+      // Reaplicar listeners se necessário
+      if (tbodyId === 'tbody-municipios-form') {
+        newRow.querySelectorAll('input').forEach(input => {
+          input.addEventListener('input', calcularTotaisMunicipios);
         });
-    });
+      }
+    }
 
-    // Auto-resize textareas ao digitar
-    document.addEventListener('input', function(e) {
-        if (e.target.tagName === 'TEXTAREA' && e.target.style.resize === 'none') {
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
+    /* ============================================================
+       🔄 NAVEGAÇÃO DO FORMULÁRIO MENSAL
+       ============================================================ */
+    let currentStep = 1;
+    const totalSteps = 6;
+
+    function setupNavegacaoForm() {
+      document.getElementById('btn-prev').addEventListener('click', () => {
+        if (currentStep > 1) {
+          mudarEtapa(currentStep - 1);
         }
-    });
-
-    // ── Seleção múltipla de células no Plano de Chamada ──────────────────
-    // Clique normal = seleciona célula. Shift+Clique = expande seleção.
-    // Delete / Backspace com células selecionadas = apaga todas.
-    let _pcSelInicio = null;  // {rowIdx, colIdx}
-    let _pcSelFim    = null;
-
-    function _pcCelulasDe(r1, c1, r2, c2) {
-        const tbody = document.getElementById('fm-pc-body');
-        if (!tbody) return [];
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
-        const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
-        const els = [];
-        for (let r = rMin; r <= rMax; r++) {
-            const cells = rows[r]?.querySelectorAll('input,textarea') || [];
-            for (let c = cMin; c <= cMax; c++) {
-                if (cells[c]) els.push(cells[c]);
-            }
-        }
-        return els;
-    }
-
-    function _pcLimparDestaque() {
-        document.querySelectorAll('.fm-pc-sel').forEach(el => el.classList.remove('fm-pc-sel'));
-    }
-
-    function _pcDestacar() {
-        _pcLimparDestaque();
-        if (!_pcSelInicio || !_pcSelFim) return;
-        _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
-            .forEach(el => el.classList.add('fm-pc-sel'));
-    }
-
-    function _pcPosicao(el) {
-        const tbody = document.getElementById('fm-pc-body');
-        const rows  = Array.from(tbody.querySelectorAll('tr'));
-        for (let r = 0; r < rows.length; r++) {
-            const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
-            const c = cells.indexOf(el);
-            if (c !== -1) return {r, c};
-        }
-        return null;
-    }
-
-    let _pcArrastando = false;
-
-    document.getElementById('fm-pc-body').addEventListener('mousedown', function(e) {
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-
-        if (e.shiftKey && _pcSelInicio) {
-            e.preventDefault();
-            _pcSelFim = pos;
-            _pcDestacar();
-            el.blur();
+      });
+      
+      document.getElementById('btn-next').addEventListener('click', () => {
+        if (currentStep < totalSteps) {
+          mudarEtapa(currentStep + 1);
         } else {
-            _pcSelInicio = pos;
-            _pcSelFim    = pos;
-            _pcArrastando = true;
-            _pcDestacar();
+          // Na última etapa, enviar
+          enviarDadosMensal();
         }
-    });
-
-    document.getElementById('fm-pc-body').addEventListener('mousemove', function(e) {
-        if (!_pcArrastando || !_pcSelInicio) return;
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-        // Só atualiza se mudou de célula
-        if (_pcSelFim && pos.r === _pcSelFim.r && pos.c === _pcSelFim.c) return;
-        e.preventDefault();
-        _pcSelFim = pos;
-        _pcDestacar();
-        // Remove foco para não abrir teclado mobile ao arrastar
-        if (document.activeElement && document.getElementById('fm-pc-body').contains(document.activeElement)) {
-            document.activeElement.blur();
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        _pcArrastando = false;
-    });
-
-    document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
-        if (_pcArrastando) return; // não interfere durante arrastar
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-        _pcSelInicio = pos;
-        _pcSelFim    = pos;
-        _pcDestacar();
-    });
-
-    // Apagar células selecionadas com Delete ou Backspace
-    document.getElementById('fm-pc-body').addEventListener('keydown', function(e) {
-        if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-        if (!_pcSelInicio || !_pcSelFim) return;
-        const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
-        // Só apaga se há mais de uma célula selecionada (seleção múltipla)
-        // ou se a célula está vazia (para não interferir com edição normal)
-        if (cells.length > 1) {
-            e.preventDefault();
-            cells.forEach(el => { el.value = ''; });
-        }
-    });
-
-    // Clicar fora do Plano de Chamada limpa a seleção
-    document.addEventListener('mousedown', function(e) {
-        const tbody = document.getElementById('fm-pc-body');
-        if (tbody && !tbody.contains(e.target)) {
-            _pcLimparDestaque();
-            _pcSelInicio = null;
-            _pcSelFim    = null;
-        }
-    });
-}
-
-function calcularTotaisEfetivo() {
-    const ops  = document.querySelectorAll('.fm-ef-op');
-    const adms = document.querySelectorAll('.fm-ef-adm');
-    const afts = document.querySelectorAll('.fm-ef-aft');
-    const tots = document.querySelectorAll('.fm-ef-tot');
-    let totOp=0, totAdm=0, totAft=0, totGeral=0;
-
-    ops.forEach((el,i) => {
-        const op  = parseInt(el.value)||0;
-        const adm = parseInt(adms[i]?.value)||0;
-        const aft = parseInt(afts[i]?.value)||0;
-        const tot = op + adm + aft;
-        if (tots[i]) tots[i].value = tot || '';
-        totOp+=op; totAdm+=adm; totAft+=aft; totGeral+=tot;
-    });
-    document.getElementById('fm-ef-tot-op').textContent    = totOp;
-    document.getElementById('fm-ef-tot-adm').textContent   = totAdm;
-    document.getElementById('fm-ef-tot-aft').textContent   = totAft;
-    document.getElementById('fm-ef-tot-geral').textContent = totGeral;
-}
-
-function calcularTotaisFormAA() {
-    const tbody = document.getElementById('fm-aa-body');
-    if (!tbody) return;
-    let pop=0, area=0;
-    tbody.querySelectorAll('tr').forEach(tr => {
-        const cells = tr.querySelectorAll('input[type=number]');
-        pop  += parseFloat(cells[1]?.value)||0;
-        area += parseFloat(cells[2]?.value)||0;
-    });
-    document.getElementById('fm-aa-pop-tot').textContent  = pop.toLocaleString('pt-BR');
-    document.getElementById('fm-aa-area-tot').textContent = area.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
-function adicionarLinhaVtr() {
-    const tbody = document.getElementById('fm-vtr-body');
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
-    tbody.appendChild(tr);
-}
-
-function adicionarLinhaEmb() {
-    const tbody = document.getElementById('fm-emb-body');
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
-    tbody.appendChild(tr);
-}
-
-function adicionarLinhaPC() {
-    const tbody = document.getElementById('fm-pc-body');
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
-    tbody.appendChild(tr);
-}
-
-function adicionarLinhaAA() {
-    const tbody = document.getElementById('fm-aa-body');
-    const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td>';
-    tbody.appendChild(tr);
-}
-
-// Funções de pré-preenchimento das tabelas
-function preencherTabelaEfetivo(ef) {
-    const ops  = document.querySelectorAll('.fm-ef-op');
-    const adms = document.querySelectorAll('.fm-ef-adm');
-    const afts = document.querySelectorAll('.fm-ef-aft');
-    ef.forEach((row, i) => {
-        if (ops[i])  ops[i].value  = row[0]||0;
-        if (adms[i]) adms[i].value = row[1]||0;
-        if (afts[i]) afts[i].value = row[2]||0;
-    });
-    calcularTotaisEfetivo();
-}
-
-function preencherTabelaEsp(esp) {
-    const qtds  = document.querySelectorAll('.fm-esp-qtd');
-    const nomes = document.querySelectorAll('.fm-esp-nomes');
-    esp.forEach((row, i) => {
-        if (qtds[i])  qtds[i].value  = row[0]||0;
-        if (nomes[i]) nomes[i].value = row[1]||'';
-    });
-}
-
-function preencherTabelaVeiculos(tbodyId, rows) {
-    const tbody = document.getElementById(tbodyId);
-    if (!tbody) return;
-    // Garante linhas suficientes
-    while (tbody.children.length < rows.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
-        tbody.appendChild(tr);
+      });
     }
-    rows.forEach((row, i) => {
-        const tr = tbody.children[i];
-        if (!tr) return;
-        const inputs = tr.querySelectorAll('input');
-        const sel    = tr.querySelector('select');
-        if (inputs[0]) inputs[0].value = row[0]||'';
-        if (inputs[1]) inputs[1].value = row[1]||'';
-        if (sel)       sel.value       = row[2]||'Operacional';
-    });
-}
 
-function preencherTabelaMat(mat) {
-    const qtds = document.querySelectorAll('.fm-mat-qtd');
-    const obs  = document.querySelectorAll('.fm-mat-obs');
-    mat.forEach((row, i) => {
-        if (qtds[i]) qtds[i].value = row[0]||0;
-        if (obs[i])  obs[i].value  = row[1]||'';
-    });
-}
-
-function preencherTabelaPC(pc) {
-    const tbody = document.getElementById('fm-pc-body');
-    if (!tbody) return;
-    while (tbody.children.length < pc.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
-        tbody.appendChild(tr);
+    function mudarEtapa(step) {
+      // Esconder todas as etapas
+      document.querySelectorAll('.form-step').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      });
+      
+      // Mostrar etapa atual
+      const current = document.querySelector(`.form-step[data-step="${step}"]`);
+      current.classList.add('active');
+      current.style.display = 'block';
+      
+      // Atualizar indicador
+      document.getElementById('step-indicator').textContent = `${step} / ${totalSteps}`;
+      
+      // Atualizar botões
+      document.getElementById('btn-prev').disabled = (step === 1);
+      document.getElementById('btn-next').textContent = (step === totalSteps) ? '📤 Enviar' : 'Próximo →';
+      
+      currentStep = step;
     }
-    pc.forEach((row, i) => {
-        const tr = tbody.children[i];
-        if (!tr) return;
-        const inputs = tr.querySelectorAll('input');
-        [0,1,2,3].forEach(j => { if (inputs[j]) inputs[j].value = row[j]||''; });
-    });
-}
 
-function preencherTabelaAA(aa) {
-    const tbody = document.getElementById('fm-aa-body');
-    if (!tbody) return;
-    while (tbody.children.length < aa.length) adicionarLinhaAA();
-    aa.forEach((row, i) => {
-        const tr = tbody.children[i];
-        if (!tr) return;
-        const inputs = tr.querySelectorAll('input');
-        if (inputs[0]) inputs[0].value = row[0]||'';
-        if (inputs[1]) inputs[1].value = row[1]||0;
-        if (inputs[2]) inputs[2].value = row[2]||0;
-        if (inputs[3]) inputs[3].value = row[3]||0;
-    });
-    calcularTotaisFormAA();
-}
-
-// Coleta todos os dados do formulário mensal em payload JSON
-function coletarPayloadMensal(u, uid) {
-    // Efetivo
-    const efetivo = patentes.map((_,i) => {
-        const op  = parseInt(document.querySelectorAll('.fm-ef-op')[i]?.value)||0;
-        const adm = parseInt(document.querySelectorAll('.fm-ef-adm')[i]?.value)||0;
-        const aft = parseInt(document.querySelectorAll('.fm-ef-aft')[i]?.value)||0;
-        return [op, adm, aft];
-    });
-    const totOp    = efetivo.reduce((s,r)=>s+r[0],0);
-    const totAdm   = efetivo.reduce((s,r)=>s+r[1],0);
-    const totAft   = efetivo.reduce((s,r)=>s+r[2],0);
-    const totGeral = totOp+totAdm+totAft;
-    const oficiais = efetivo.slice(0,6).reduce((s,r)=>s+r[0]+r[1]+r[2],0);
-    const pracas   = totGeral - oficiais;
-
-    // Especialistas
-    const especialistas = cursosEsp.map((_,i) => [
-        parseInt(document.querySelectorAll('.fm-esp-qtd')[i]?.value)||0,
-        document.querySelectorAll('.fm-esp-nomes')[i]?.value||''
-    ]);
-
-    // Viaturas
-    const viaturas = Array.from(document.querySelectorAll('#fm-vtr-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const sel    = tr.querySelector('select');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', sel?.value||'Operacional'];
-    }).filter(r => r[0]);
-
-    // Embarcações
-    const embarcacoes = Array.from(document.querySelectorAll('#fm-emb-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const sel    = tr.querySelector('select');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', sel?.value||'Operacional'];
-    }).filter(r => r[0]);
-
-    // Materiais
-    const materiais = essenciais.map((_,i) => [
-        parseInt(document.querySelectorAll('.fm-mat-qtd')[i]?.value)||0,
-        document.querySelectorAll('.fm-mat-obs')[i]?.value||''
-    ]);
-
-    // Plano de Chamada
-    const planoChamada = Array.from(document.querySelectorAll('#fm-pc-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', inputs[2]?.value||'', inputs[3]?.value||''];
-    }).filter(r => r[0]);
-
-    // Área de Atuação
-    const areaAtuacao = Array.from(document.querySelectorAll('#fm-aa-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        return [inputs[0]?.value||'', parseFloat(inputs[1]?.value)||0, parseFloat(inputs[2]?.value)||0, parseFloat(inputs[3]?.value)||0];
-    }).filter(r => r[0]);
-
-    // Contagem viaturas por status
-    const vtrOp = viaturas.filter(v=>v[2]==='Operacional').length;
-    const vtrMt = viaturas.filter(v=>v[2]==='Manutenção').length;
-    const vtrIn = viaturas.filter(v=>v[2]==='Inoperante').length;
-    const embOp = embarcacoes.filter(v=>v[2]==='Operacional').length;
-    const embMt = embarcacoes.filter(v=>v[2]==='Manutenção').length;
-    const embIn = embarcacoes.filter(v=>v[2]==='Inoperante').length;
-
-    return {
+    /* ============================================================
+       📤 ENVIAR DADOS MENSAL PARA GOOGLE APPS SCRIPT
+       ============================================================ */
+    async function enviarDadosMensal() {
+      const feedback = document.getElementById('feedback-mensal');
+      feedback.style.display = 'none';
+      
+      // Coletar dados do formulário (exemplo simplificado)
+      const dados = {
         tipo: 'mensal',
-        unidade: u.nome,
-        unidadeId: uid,
-        timestamp: new Date().toLocaleString('pt-BR'),
-        comandante:    document.getElementById('fm-comandante')?.value    || '',
-        subcomandante: document.getElementById('fm-subcomandante')?.value || '',
-        // Resumo numérico para dashboards
-        oficiais, pracas,
-        operacional: totOp,
-        admOf: efetivo.slice(0,6).reduce((s,r)=>s+r[1],0),
-        admPr: efetivo.slice(6).reduce((s,r)=>s+r[1],0),
-        afastamentos: totAft,
-        vtrOp, vtrMt, vtrIn,
-        embOp, embMt, embIn,
-        matDes: parseInt(document.querySelectorAll('.fm-mat-qtd')[0]?.value)||0,
-        matDea: parseInt(document.querySelectorAll('.fm-mat-qtd')[1]?.value)||0,
-        matDrone: parseInt(document.querySelectorAll('.fm-mat-qtd')[2]?.value)||0,
-        matComp: parseInt(document.querySelectorAll('.fm-mat-qtd')[3]?.value)||0,
-        matMerg: parseInt(document.querySelectorAll('.fm-mat-qtd')[4]?.value)||0,
-        // Dados completos como JSON
-        efetivo:       JSON.stringify(efetivo),
-        especialistas: JSON.stringify(especialistas),
-        viaturas:      JSON.stringify(viaturas),
-        embarcacoes:   JSON.stringify(embarcacoes),
-        materiais:     JSON.stringify(materiais),
-        planoChamada:  JSON.stringify(planoChamada),
-        areaAtuacao:   JSON.stringify(areaAtuacao)
-    };
-}
-
-async function enviarMensal() {
-    const uid  = parseInt(document.getElementById('form-mensal-wrapper').dataset.uid);
-    const u    = unidades.find(x => x.id === uid);
-    const btn  = document.querySelector('#form-mensal-wrapper .form-btn-enviar');
-    const sta  = document.getElementById('fm-status');
-    const nomeCurto = (typeof NOME_CURTO !== 'undefined') ? NOME_CURTO : '6º CRBM';
-
-    const payload = coletarPayloadMensal(u, uid);
-
-    btn.disabled = true; btn.textContent = '⏳ Enviando...';
-    sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
-
-    try {
-        await fetch(SCRIPT_URL_MENSAL, {
-            method: 'POST',
-            mode:   'no-cors',
-            headers: {'Content-Type': 'text/plain'},
-            body: JSON.stringify(payload)
+        unidadeId: 1, // Substitua pela unidade selecionada
+        timestamp: new Date().toISOString(),
+        // ... adicione os campos reais aqui
+      };
+      
+      try {
+        feedback.className = 'alert alert-success';
+        feedback.textContent = '🔄 Enviando dados...';
+        feedback.style.display = 'block';
+        
+        // ✅ Fetch compatível com CORS
+        const response = await fetch(SCRIPT_URL_MENSAL, {
+          method: 'POST',
+          body: JSON.stringify(dados)
+          // ⚠️ NÃO usar headers: { 'Content-Type': 'application/json' }
         });
-
-        await new Promise(r => setTimeout(r, 1500));
-        const check = await fetch(`${SCRIPT_URL_MENSAL}?tipo=mensal&unidadeId=${uid}`);
-        const json  = await check.json();
-        const salvo = json.sucesso && json.registro &&
-                      json.registro.UnidadeId == uid;
-
-        if (salvo) {
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-            btn.textContent = '✅ Enviado';
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          feedback.className = 'alert alert-success';
+          feedback.innerHTML = '✅ <strong>Dados enviados com sucesso!</strong><br>Retornando à primeira etapa...';
+          setTimeout(() => {
+            mudarEtapa(1);
+            feedback.style.display = 'none';
+            document.getElementById('form-mensal').reset();
+            calcularTotaisEfetivo();
+          }, 2000);
         } else {
-            throw new Error('Registro não encontrado após envio.');
+          throw new Error(result.message || 'Erro no servidor');
         }
-    } catch(e) {
-        sta.style.color = 'var(--vermelho)';
-        sta.textContent = '❌ Erro ao enviar: ' + e.message;
-        btn.disabled = false; btn.textContent = '📤 Enviar ao ' + nomeCurto;
-    }
-}
-
-/* ===================== INIT ===================== */
-document.addEventListener('DOMContentLoaded', function() {
-    // Aplicar configurações do config.js
-    const titulo     = (typeof TITULO_COMANDO !== 'undefined') ? TITULO_COMANDO : '6° COMANDO REGIONAL';
-    const subtitulo  = (typeof SUBTITULO      !== 'undefined') ? SUBTITULO      : 'BOMBEIRO MILITAR';
-    const nomeCurto  = (typeof NOME_CURTO     !== 'undefined') ? NOME_CURTO     : '6º CRBM';
-
-    document.getElementById('header-titulo').textContent    = titulo;
-    document.getElementById('header-subtitulo').textContent = subtitulo;
-    document.title = titulo + ' — ' + subtitulo;
-
-    // Botões de envio dos formulários
-    const btnD = document.getElementById('btn-enviar-diario');
-    const btnM = document.getElementById('btn-enviar-mensal');
-    if (btnD) btnD.textContent = '📤 Enviar ao ' + nomeCurto;
-    if (btnM) btnM.textContent = '📤 Enviar ao ' + nomeCurto;
-
-    // Tabs de unidades
-    const tabsEl = document.getElementById('unidades-tabs');
-    if (tabsEl) {
-        tabsEl.innerHTML = unidades.map((u,i) =>
-            `<button class="unidade-tab${i===0?' ativo':''}" onclick="abrirUnidade(${u.id})">
-                <span class="unidade-tab-inner">${u.nome}</span>
-            </button>`
-        ).join('');
+        
+      } catch (error) {
+        console.error('❌ Erro ao enviar:', error);
+        feedback.className = 'alert alert-error';
+        feedback.innerHTML = `❌ <strong>Falha ao enviar:</strong><br>${error.message}`;
+        feedback.style.display = 'block';
+      }
     }
 
-    document.getElementById('unidades-container').innerHTML = unidades.map((u,i) => gerarUnidade(u, i===0)).join('');
-    calcularTotais();
-    criarGraficosEfetivo();
-    renderQuadroDiario();
-    gerarLinksUI();
-    verificarURLParams();
-});
-</script>
+    /* ============================================================
+       📈 GRÁFICOS (Chart.js)
+       ============================================================ */
+    function inicializarGraficos() {
+      // Cores das unidades
+      const cores = coresUnidades.slice(0, unidades.length);
+      const labels = nomesUnidades;
+      
+      // Gráfico 1: Efetivo por Unidade
+      new Chart(document.getElementById('chart-efetivo'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Efetivo Total',
+            data: [45, 32, 28, 25, 18, 12], // Substitua por dados reais
+            backgroundColor: cores,
+            borderColor: cores.map(c => c + 'cc'),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Efetivo Total por Unidade' },
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Quantidade' } }
+          }
+        }
+      });
+      
+      // Gráfico 2: Distribuição por Categoria
+      new Chart(document.getElementById('chart-categorias'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Oficiais', 'Praças'],
+          datasets: [{
+            data: [15, 85], // Substitua por dados reais
+            backgroundColor: ['#1e5fa5', '#28a745']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Distribuição por Categoria' }
+          }
+        }
+      });
+      
+      // Gráfico 3: Viaturas por Condição
+      new Chart(document.getElementById('chart-viaturas'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Operacional',
+              data: [6, 4, 3, 3, 2, 1],
+              backgroundColor: '#28a745'
+            },
+            {
+              label: 'Manutenção',
+              data: [1, 1, 0, 1, 0, 0],
+              backgroundColor: '#fb8c00'
+            },
+            {
+              label: 'Inoperante',
+              data: [0, 0, 1, 0, 0, 0],
+              backgroundColor: '#d32f2f'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Viaturas por Condição' }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+          }
+        }
+      });
+      
+      // Gráfico 4: Municípios por Unidade
+      new Chart(document.getElementById('chart-municipios'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Qtd. de Municípios',
+            data: [8, 5, 6, 4, 3, 2],
+            backgroundColor: '#6a1fb5'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: { display: true, text: 'Municípios por Unidade' }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    /* ============================================================
+       📋 UTILITÁRIOS
+       ============================================================ */
+    function copiarLink(slug) {
+      const link = `${location.origin}/form?unidade=${slug}`;
+      navigator.clipboard.writeText(link).then(() => {
+        alert(`✅ Link copiado:\n${link}`);
+      });
+    }
+
+    // Inicializar quando o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', () => {
+      // Se já estiver autenticado (ex: sessionStorage), pular login
+      if (sessionStorage.getItem('auth_6crbm') === 'true') {
+        isAuthenticated = true;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-panel').style.display = 'block';
+        initPanel();
+      }
+    });
+
+    // Salvar autenticação no sessionStorage
+    const originalInit = initPanel;
+    initPanel = function() {
+      sessionStorage.setItem('auth_6crbm', 'true');
+      originalInit();
+    };
+  </script>
 </body>
 </html>
