@@ -339,6 +339,7 @@
         .fm-btn-nav{background:var(--cinza);color:#fff;border:2px solid #000;padding:9px 20px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.82rem;text-transform:uppercase;transition:all .2s}
         .fm-btn-nav:hover:not(:disabled){background:var(--cinza-esc);transform:translateY(-1px)}
         .fm-btn-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .fm-pc-sel{background:#bbdefb!important;outline:2px solid #1e5fa5!important;outline-offset:-1px}
 
         /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
         .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
@@ -2004,6 +2005,106 @@ function iniciarFormularioMensal() {
         if (e.target.tagName === 'TEXTAREA' && e.target.style.resize === 'none') {
             e.target.style.height = 'auto';
             e.target.style.height = e.target.scrollHeight + 'px';
+        }
+    });
+
+    // ── Seleção múltipla de células no Plano de Chamada ──────────────────
+    // Clique normal = seleciona célula. Shift+Clique = expande seleção.
+    // Delete / Backspace com células selecionadas = apaga todas.
+    let _pcSelInicio = null;  // {rowIdx, colIdx}
+    let _pcSelFim    = null;
+
+    function _pcCelulasDe(r1, c1, r2, c2) {
+        const tbody = document.getElementById('fm-pc-body');
+        if (!tbody) return [];
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
+        const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
+        const els = [];
+        for (let r = rMin; r <= rMax; r++) {
+            const cells = rows[r]?.querySelectorAll('input,textarea') || [];
+            for (let c = cMin; c <= cMax; c++) {
+                if (cells[c]) els.push(cells[c]);
+            }
+        }
+        return els;
+    }
+
+    function _pcLimparDestaque() {
+        document.querySelectorAll('.fm-pc-sel').forEach(el => el.classList.remove('fm-pc-sel'));
+    }
+
+    function _pcDestacar() {
+        _pcLimparDestaque();
+        if (!_pcSelInicio || !_pcSelFim) return;
+        _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
+            .forEach(el => el.classList.add('fm-pc-sel'));
+    }
+
+    function _pcPosicao(el) {
+        const tbody = document.getElementById('fm-pc-body');
+        const rows  = Array.from(tbody.querySelectorAll('tr'));
+        for (let r = 0; r < rows.length; r++) {
+            const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
+            const c = cells.indexOf(el);
+            if (c !== -1) return {r, c};
+        }
+        return null;
+    }
+
+    document.getElementById('fm-pc-body').addEventListener('mousedown', function(e) {
+        const el = e.target.closest('input,textarea');
+        if (!el) return;
+        const pos = _pcPosicao(el);
+        if (!pos) return;
+
+        if (e.shiftKey && _pcSelInicio) {
+            e.preventDefault();
+            _pcSelFim = pos;
+            _pcDestacar();
+            // Tira o foco do campo atual para não interferir
+            el.blur();
+        } else {
+            _pcSelInicio = pos;
+            _pcSelFim    = pos;
+            // Destaque será aplicado no focus
+        }
+    });
+
+    document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
+        const el = e.target.closest('input,textarea');
+        if (!el) return;
+        const pos = _pcPosicao(el);
+        if (!pos) return;
+        // Se não há shift, reinicia seleção para a célula clicada
+        if (_pcSelInicio && _pcSelFim &&
+            _pcSelInicio.r === _pcSelFim.r && _pcSelInicio.c === _pcSelFim.c) {
+            _pcSelInicio = pos;
+            _pcSelFim    = pos;
+        }
+        _pcDestacar();
+    });
+
+    // Apagar células selecionadas com Delete ou Backspace
+    document.getElementById('fm-pc-body').addEventListener('keydown', function(e) {
+        if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+        if (!_pcSelInicio || !_pcSelFim) return;
+        const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
+        // Só apaga se há mais de uma célula selecionada (seleção múltipla)
+        // ou se a célula está vazia (para não interferir com edição normal)
+        if (cells.length > 1) {
+            e.preventDefault();
+            cells.forEach(el => { el.value = ''; });
+        }
+    });
+
+    // Clicar fora do Plano de Chamada limpa a seleção
+    document.addEventListener('mousedown', function(e) {
+        const tbody = document.getElementById('fm-pc-body');
+        if (tbody && !tbody.contains(e.target)) {
+            _pcLimparDestaque();
+            _pcSelInicio = null;
+            _pcSelFim    = null;
         }
     });
 }
