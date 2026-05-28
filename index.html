@@ -897,14 +897,14 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-pc-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: 1º Ten. 123456 João Silva"></td><td><input type="text" class="fm-input-cell" placeholder="(xx) 9xxxx-xxxx"></td><td><input type="text" class="fm-input-cell" placeholder="xxx.xxx.xxx-xx"></td><td><input type="text" class="fm-input-cell" placeholder="A, B, C..."></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Ex: 1º Ten. 123456 João Silva" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -1949,7 +1949,7 @@ function iniciarFormularioMensal() {
                     <span style="background:var(--vermelho);color:#fff;font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:3px;margin-right:6px">${c.abrev}</span>${c.nome}
                 </td>
                 <td><input type="number" class="fm-input-cell fm-num fm-esp-qtd" data-idx="${i}" min="0" placeholder="0"></td>
-                <td><input type="text" class="fm-input-cell fm-esp-nomes" data-idx="${i}" placeholder="Nomes dos militares..."></td>
+                <td><textarea class="fm-input-cell fm-esp-nomes" data-idx="${i}" placeholder="Nomes dos militares..." rows="2" style="resize:vertical;min-height:36px"></textarea></td>
             </tr>`
         ).join('');
     }
@@ -1967,6 +1967,43 @@ function iniciarFormularioMensal() {
     }
 
     abrirFmTab(1);
+
+    // Paste inteligente no Plano de Chamada — distribui linhas coladas
+    document.getElementById('fm-pc-body').addEventListener('paste', function(e) {
+        const target = e.target;
+        if (!target.classList.contains('fm-pc-nome')) return;
+        e.preventDefault();
+
+        const texto = (e.clipboardData || window.clipboardData).getData('text');
+        const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+        if (linhas.length <= 1) {
+            target.value = texto.trim();
+            return;
+        }
+
+        // Preenche a partir da linha atual
+        const tbody = document.getElementById('fm-pc-body');
+        const rows  = Array.from(tbody.querySelectorAll('tr'));
+        const idx   = rows.findIndex(tr => tr.contains(target));
+
+        linhas.forEach((nome, i) => {
+            let tr = rows[idx + i];
+            if (!tr) {
+                adicionarLinhaPC();
+                tr = tbody.querySelectorAll('tr')[idx + i];
+            }
+            const ta = tr.querySelector('textarea.fm-pc-nome');
+            if (ta) ta.value = nome;
+        });
+    });
+
+    // Auto-resize textareas ao digitar
+    document.addEventListener('input', function(e) {
+        if (e.target.tagName === 'TEXTAREA' && e.target.style.resize === 'none') {
+            e.target.style.height = 'auto';
+            e.target.style.height = e.target.scrollHeight + 'px';
+        }
+    });
 }
 
 function calcularTotaisEfetivo() {
@@ -2020,7 +2057,7 @@ function adicionarLinhaEmb() {
 function adicionarLinhaPC() {
     const tbody = document.getElementById('fm-pc-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Nome..."></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
     tbody.appendChild(tr);
 }
 
