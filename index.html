@@ -800,11 +800,11 @@
                         <div style="margin-top:14px">
                             <div class="form-grupo">
                                 <label class="form-label">Comandante da Unidade</label>
-                                <input type="text" id="fm-comandante" class="form-input" placeholder="Posto, RG e Nome completo">
+                                <input type="text" id="fm-comandante" class="form-input" placeholder="Posto e Nome completo">
                             </div>
                             <div class="form-grupo" style="margin-top:10px">
                                 <label class="form-label">Subcomandante</label>
-                                <input type="text" id="fm-subcomandante" class="form-input" placeholder="Posto, RG e Nome completo">
+                                <input type="text" id="fm-subcomandante" class="form-input" placeholder="Posto e Nome completo">
                             </div>
                         </div>
                     </div>
@@ -1890,7 +1890,9 @@ async function enviarDiario() {
 
     try {
         const res = await fetch(SCRIPT_URL_DIARIO, {
-            method:'POST', body: JSON.stringify(payload)
+            method:'POST',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify(payload)
         });
         const json = await res.json();
         if (json.sucesso) {
@@ -2381,7 +2383,9 @@ async function enviarMensal() {
 
     try {
         const res = await fetch(SCRIPT_URL_MENSAL, {
-            method:'POST', body: JSON.stringify(payload)
+            method:'POST',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify(payload)
         });
         const json = await res.json();
         if (json.sucesso) {
