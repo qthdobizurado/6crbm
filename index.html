@@ -1747,7 +1747,7 @@ async function preencherFormularioDiario(uid) {
     try {
         const url = `${scriptUrl}?tipo=diario&unidadeId=${uid}`;
         const res  = await fetch(url);
-        const json = JSON.parse(await res.text());
+        const json = await res.json();
 
         if (!json.sucesso || !json.registro) {
             mostrarStatusCarregamento('diario', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
@@ -1786,7 +1786,7 @@ async function preencherFormularioMensal(uid) {
     try {
         const url = `${scriptUrl}?tipo=mensal&unidadeId=${uid}`;
         const res  = await fetch(url);
-        const json = JSON.parse(await res.text());
+        const json = await res.json();
 
         if (!json.sucesso || !json.registro) {
             mostrarStatusCarregamento('mensal', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
@@ -1892,70 +1892,33 @@ async function enviarDiario() {
         (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM'));
 }
 
-/* ===================== ENVIO VIA FORM (sem CORS) ===================== */
-// O Apps Script bloqueia fetch por causa do redirect 302.
-// Form submit para iframe oculto não tem essa restrição — funciona sempre.
-function enviarViaForm(url, payload, btn, sta, nomeCurto) {
-    const nomeCurtoStr = nomeCurto || '6º CRBM';
-
-    // Cria iframe oculto para receber o redirect do Apps Script
-    let iframe = document.getElementById('_submit_iframe');
-    if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id   = '_submit_iframe';
-        iframe.name = '_submit_iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-    }
-
-    // Cria form oculto apontando para o iframe
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = '_submit_iframe';
-    form.style.display = 'none';
-
-    // Envia o payload como campo único JSON
-    const input = document.createElement('input');
-    input.type  = 'hidden';
-    input.name  = 'payload';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    document.body.appendChild(form);
-
+/* ===================== ENVIO VIA GET (igual ao script original) ===================== */
+// Envia como GET com payload na URL — igual ao script de exemplo que funcionava.
+// GET não sofre o problema de redirect CORS do Apps Script.
+async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5';
     sta.textContent = 'Enviando dados...';
 
-    iframe.onload = function() {
-        // Quando o iframe carrega, o Apps Script já processou
-        sta.style.color = 'var(--verde)';
-        sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-        btn.textContent = '✅ Enviado';
-        form.remove();
-        iframe.onload = null;
-    };
+    try {
+        const payloadStr = encodeURIComponent(JSON.stringify(payload));
+        const res  = await fetch(`${url}?acao=gravar&payload=${payloadStr}`);
+        const json = await res.json();
 
-    // Timeout de segurança — se o iframe demorar mais de 15s
-    const timeout = setTimeout(() => {
-        if (btn.textContent === '⏳ Enviando...') {
+        if (json.sucesso) {
             sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados! (confirmação automática)';
+            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
             btn.textContent = '✅ Enviado';
+        } else {
+            throw new Error(json.mensagem || 'Erro desconhecido');
         }
-    }, 15000);
-
-    iframe.onload = function() {
-        clearTimeout(timeout);
-        sta.style.color = 'var(--verde)';
-        sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-        btn.textContent = '✅ Enviado';
-        form.remove();
-        iframe.onload = null;
-    };
-
-    form.submit();
+    } catch(e) {
+        sta.style.color = 'var(--vermelho)';
+        sta.textContent = '❌ Erro ao enviar: ' + e.message;
+        btn.disabled = false;
+        btn.textContent = '📤 Enviar ao ' + (nomeCurto || '6º CRBM');
+    }
 }
 
 /* ===================== FORMULÁRIO MENSAL — FUNÇÕES ===================== */
