@@ -1472,12 +1472,24 @@ function adicionarLinhaMunicipio(id) {
 
 function calcularTotaisAA(id) {
     const cont = document.getElementById(`u${id}-c6`);
+    if (!cont) return;
     const linhas = cont.querySelectorAll('tbody tr');
     let totalPop = 0, totalArea = 0;
     linhas.forEach(tr => {
         const inputs = tr.querySelectorAll('input[type="number"]');
-        totalPop  += parseFloat(inputs[1]?.value) || 0;
-        totalArea += parseFloat(inputs[2]?.value) || 0;
+        if (inputs.length >= 3) {
+            // Tabela com inputs (modo edição)
+            totalPop  += parseFloat(inputs[1]?.value) || 0;
+            totalArea += parseFloat(inputs[2]?.value) || 0;
+        } else {
+            // Tabela com texto puro (dados carregados do servidor)
+            const tds = tr.querySelectorAll('td');
+            // td[0]=município, td[1]=distância, td[2]=população, td[3]=área
+            const popTxt  = tds[2]?.textContent?.replace(/\./g,'').replace(',','.').trim() || '0';
+            const areaTxt = tds[3]?.textContent?.replace(/\./g,'').replace(',','.').trim() || '0';
+            totalPop  += parseFloat(popTxt)  || 0;
+            totalArea += parseFloat(areaTxt) || 0;
+        }
     });
     document.getElementById(`u${id}-aa-pop-total`).textContent  = totalPop.toLocaleString('pt-BR');
     document.getElementById(`u${id}-aa-area-total`).textContent = totalArea.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -2751,8 +2763,10 @@ async function carregarDadosDoPainel() {
         // Atualiza dashboards secundários se já tiverem sido abertos
         try { if (window._vtrPronto) { ['chartViaturas','chartEmbarcacoes'].forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} }); } } catch(e) {}
         try { if (window._matPronto) { try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {} } } catch(e) {}
-        try { if (window._espPronto) { criarMiniGraficos(); } } catch(e) {}
-        try { if (window._aaPronto)  { window._aaPronto = false; iniciarAreaAtuacao(); } } catch(e) {}
+        // Especialistas — sempre recria os mini gráficos pois dadosEsp foi atualizado
+        try { if (window._espPronto) { window._espPronto = false; iniciarEspecialistas(); } } catch(e) {}
+        // Área de Atuação — força re-render pois dadosAreaAtuacao foi atualizado
+        try { window._aaPronto = false; if (dashAtual === 4) iniciarAreaAtuacao(); } catch(e) {}
     }
 
     if (elTs) elTs.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
@@ -2828,6 +2842,30 @@ function aplicarDadosMensais(registros) {
             parseInt(r.MatMergulho)||0
         ];
         mats.forEach((v, mi) => { dadosMateriais[mi][idx] = v; });
+
+        // ── Especialistas — atualiza dadosEsp para o dashboard ──
+        try {
+            if (r.Especialistas) {
+                const esp = JSON.parse(r.Especialistas);
+                esp.forEach((row, ci) => {
+                    if (dadosEsp[ci]) dadosEsp[ci][idx] = parseInt(row[0]) || 0;
+                });
+            }
+        } catch(e) {}
+
+        // ── Área de Atuação — atualiza dadosAreaAtuacao para o dashboard ──
+        try {
+            if (r.AreaAtuacao) {
+                const aa = JSON.parse(r.AreaAtuacao);
+                const uid = idx + 1;
+                dadosAreaAtuacao[uid] = aa.map(m => [
+                    m[0] || '',
+                    parseFloat(m[1]) || 0,
+                    parseFloat(m[2]) || 0,
+                    parseFloat(m[3]) || 0
+                ]);
+            }
+        } catch(e) {}
 
         // Atualiza último preenchimento
         const elAtt = document.getElementById(`ultima-att-${idx+1}`);
