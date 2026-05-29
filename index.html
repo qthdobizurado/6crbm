@@ -1491,7 +1491,7 @@ function gerarUnidade(u, ativo) {
                 <div class="unidade-header-info">
                     <h3>${u.nome}</h3>
                     <p class="unidade-subtipo">${u.tipo}</p>
-                    <span class="unidade-ultima-att">🕒 Último preenchimento: <strong>${dataPreench}</strong></span>
+                    <span class="unidade-ultima-att" id="ultima-att-${u.id}">🕒 Último preenchimento: <strong>${dataPreench}</strong></span>
                 </div>
             </div>
             <div class="controles-tabs">${tabs}</div>
@@ -2450,6 +2450,10 @@ function aplicarDadosDiarios(registros) {
         const idx = unidades.findIndex(u => u.id == r.unidadeId);
         if (idx === -1) return;
 
+        // Último preenchimento diário
+        const elAttD = document.getElementById(`ultima-att-${idx+1}`);
+        if (elAttD && r.timestamp) elAttD.innerHTML = `🕒 Último preenchimento: <strong>${r.timestamp}</strong>`;
+
         // Quadro diário
         dadosQuadroDiario[idx] = {
             unidade: r.unidade,
@@ -2505,6 +2509,10 @@ function aplicarDadosMensais(registros) {
             parseInt(r.MatMergulho)||0
         ];
         mats.forEach((v, mi) => { dadosMateriais[mi][idx] = v; });
+
+        // Atualiza último preenchimento
+        const elAtt = document.getElementById(`ultima-att-${idx+1}`);
+        if (elAtt && r.Timestamp) elAtt.innerHTML = `🕒 Último preenchimento: <strong>${r.Timestamp}</strong>`;
 
         // Atualiza a aba da unidade no painel
         atualizarAbaUnidade(idx, r);
