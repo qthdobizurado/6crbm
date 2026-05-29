@@ -1986,274 +1986,6 @@ function iniciarFormularioMensal() {
 
     abrirFmTab(1);
 
-    // Paste inteligente em Viaturas e Embarcações
-    ['fm-vtr-body','fm-emb-body'].forEach(tbodyId => {
-        const addFn = tbodyId === 'fm-vtr-body' ? adicionarLinhaVtr : adicionarLinhaEmb;
-        document.getElementById(tbodyId).addEventListener('paste', function(e) {
-            const target = e.target.closest('input');
-            if (!target) return;
-            const tbody = document.getElementById(tbodyId);
-            const rows   = Array.from(tbody.querySelectorAll('tr'));
-            const rowIdx = rows.findIndex(tr => tr.contains(target));
-            if (rowIdx === -1) return;
-            const cells  = Array.from(rows[rowIdx].querySelectorAll('input'));
-            const colIdx = cells.findIndex(el => el === target);
-            if (colIdx === -1) return;
-            const texto  = (e.clipboardData || window.clipboardData).getData('text');
-            const linhas = texto.split(/?
-/).map(l => l.trim()).filter(l => l);
-            if (linhas.length <= 1) return;
-            e.preventDefault();
-            linhas.forEach((val, i) => {
-                if (rowIdx + i >= tbody.querySelectorAll('tr').length) addFn();
-                const tr = tbody.querySelectorAll('tr')[rowIdx + i];
-                const el = tr.querySelectorAll('input')[colIdx];
-                if (el) el.value = val;
-            });
-        });
-    });
-
-    // Paste inteligente no Plano de Chamada — distribui linhas coladas em qualquer coluna
-    document.getElementById('fm-pc-body').addEventListener('paste', function(e) {
-        const target = e.target;
-        const tbody  = document.getElementById('fm-pc-body');
-
-        // Descobre em qual célula (0-3) o paste ocorreu
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const rowIdx = rows.findIndex(tr => tr.contains(target));
-        if (rowIdx === -1) return;
-
-        const cells = Array.from(rows[rowIdx].querySelectorAll('input, textarea'));
-        const colIdx = cells.findIndex(el => el === target);
-        if (colIdx === -1) return;
-
-        const texto = (e.clipboardData || window.clipboardData).getData('text');
-        const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-
-        // Se só uma linha, deixa o comportamento padrão
-        if (linhas.length <= 1) return;
-
-        e.preventDefault();
-
-        linhas.forEach((val, i) => {
-            // Cria linha se necessário
-            if (rowIdx + i >= tbody.querySelectorAll('tr').length) adicionarLinhaPC();
-            const tr = tbody.querySelectorAll('tr')[rowIdx + i];
-            const el = tr.querySelectorAll('input, textarea')[colIdx];
-            if (el) el.value = val;
-        });
-    });
-
-    // Auto-resize textareas ao digitar
-    document.addEventListener('input', function(e) {
-        if (e.target.tagName === 'TEXTAREA' && e.target.style.resize === 'none') {
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
-        }
-    });
-
-    // ── Seleção múltipla de células no Plano de Chamada ──────────────────
-    // Clique normal = seleciona célula. Shift+Clique = expande seleção.
-    // Delete / Backspace com células selecionadas = apaga todas.
-    let _pcSelInicio = null;  // {rowIdx, colIdx}
-    let _pcSelFim    = null;
-
-    function _pcCelulasDe(r1, c1, r2, c2) {
-        const tbody = document.getElementById('fm-pc-body');
-        if (!tbody) return [];
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
-        const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
-        const els = [];
-        for (let r = rMin; r <= rMax; r++) {
-            const cells = rows[r]?.querySelectorAll('input,textarea') || [];
-            for (let c = cMin; c <= cMax; c++) {
-                if (cells[c]) els.push(cells[c]);
-            }
-        }
-        return els;
-    }
-
-    function _pcLimparDestaque() {
-        document.querySelectorAll('.fm-pc-sel').forEach(el => el.classList.remove('fm-pc-sel'));
-    }
-
-    function _pcDestacar() {
-        _pcLimparDestaque();
-        if (!_pcSelInicio || !_pcSelFim) return;
-        _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
-            .forEach(el => el.classList.add('fm-pc-sel'));
-    }
-
-    function _pcPosicao(el) {
-        const tbody = document.getElementById('fm-pc-body');
-        const rows  = Array.from(tbody.querySelectorAll('tr'));
-        for (let r = 0; r < rows.length; r++) {
-            const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
-            const c = cells.indexOf(el);
-            if (c !== -1) return {r, c};
-        }
-        return null;
-    }
-
-    let _pcArrastando = false;
-
-    document.getElementById('fm-pc-body').addEventListener('mousedown', function(e) {
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-
-        if (e.shiftKey && _pcSelInicio) {
-            e.preventDefault();
-            _pcSelFim = pos;
-            _pcDestacar();
-            el.blur();
-        } else {
-            _pcSelInicio = pos;
-            _pcSelFim    = pos;
-            _pcArrastando = true;
-            _pcDestacar();
-        }
-    });
-
-    document.getElementById('fm-pc-body').addEventListener('mousemove', function(e) {
-        if (!_pcArrastando || !_pcSelInicio) return;
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-        // Só atualiza se mudou de célula
-        if (_pcSelFim && pos.r === _pcSelFim.r && pos.c === _pcSelFim.c) return;
-        e.preventDefault();
-        _pcSelFim = pos;
-        _pcDestacar();
-        // Remove foco para não abrir teclado mobile ao arrastar
-        if (document.activeElement && document.getElementById('fm-pc-body').contains(document.activeElement)) {
-            document.activeElement.blur();
-        }
-    });
-
-    document.addEventListener('mouseup', function() {
-        _pcArrastando = false;
-    });
-
-    document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
-        if (_pcArrastando) return; // não interfere durante arrastar
-        const el = e.target.closest('input,textarea');
-        if (!el) return;
-        const pos = _pcPosicao(el);
-        if (!pos) return;
-        _pcSelInicio = pos;
-        _pcSelFim    = pos;
-        _pcDestacar();
-    });
-
-    // Apagar células selecionadas com Delete ou Backspace
-    document.getElementById('fm-pc-body').addEventListener('keydown', function(e) {
-        if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-        if (!_pcSelInicio || !_pcSelFim) return;
-        const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
-        // Só apaga se há mais de uma célula selecionada (seleção múltipla)
-        // ou se a célula está vazia (para não interferir com edição normal)
-        if (cells.length > 1) {
-            e.preventDefault();
-            cells.forEach(el => { el.value = ''; });
-        }
-    });
-
-    // Clicar fora do Plano de Chamada limpa a seleção
-    document.addEventListener('mousedown', function(e) {
-        const tbody = document.getElementById('fm-pc-body');
-        if (tbody && !tbody.contains(e.target)) {
-            _pcLimparDestaque();
-            _pcSelInicio = null;
-            _pcSelFim    = null;
-        }
-    });
-
-    // ── Seleção múltipla de células em Viaturas e Embarcações ────────────
-    ['fm-vtr-body','fm-emb-body'].forEach(tbodyId => {
-        let _selIni = null, _selFim = null, _arrastando = false;
-
-        function _posicao(el) {
-            const tbody = document.getElementById(tbodyId);
-            const rows  = Array.from(tbody.querySelectorAll('tr'));
-            for (let r = 0; r < rows.length; r++) {
-                const cells = Array.from(rows[r].querySelectorAll('input'));
-                const c = cells.indexOf(el);
-                if (c !== -1) return {r, c};
-            }
-            return null;
-        }
-
-        function _celulas(r1,c1,r2,c2) {
-            const tbody = document.getElementById(tbodyId);
-            const rows  = Array.from(tbody.querySelectorAll('tr'));
-            const rMin=Math.min(r1,r2), rMax=Math.max(r1,r2);
-            const cMin=Math.min(c1,c2), cMax=Math.max(c1,c2);
-            const els = [];
-            for (let r=rMin; r<=rMax; r++) {
-                const cells = rows[r]?.querySelectorAll('input') || [];
-                for (let c=cMin; c<=cMax; c++) { if(cells[c]) els.push(cells[c]); }
-            }
-            return els;
-        }
-
-        function _destacar() {
-            document.querySelectorAll(`#${tbodyId} .fm-pc-sel`).forEach(el => el.classList.remove('fm-pc-sel'));
-            if (!_selIni || !_selFim) return;
-            _celulas(_selIni.r,_selIni.c,_selFim.r,_selFim.c).forEach(el => el.classList.add('fm-pc-sel'));
-        }
-
-        const tbody = document.getElementById(tbodyId);
-        if (!tbody) return;
-
-        tbody.addEventListener('mousedown', function(e) {
-            const el = e.target.closest('input');
-            if (!el) return;
-            const pos = _posicao(el);
-            if (!pos) return;
-            if (e.shiftKey && _selIni) {
-                e.preventDefault(); _selFim = pos; _destacar(); el.blur();
-            } else {
-                _selIni = pos; _selFim = pos; _arrastando = true; _destacar();
-            }
-        });
-
-        tbody.addEventListener('mousemove', function(e) {
-            if (!_arrastando || !_selIni) return;
-            const el = e.target.closest('input');
-            if (!el) return;
-            const pos = _posicao(el);
-            if (!pos || (_selFim && pos.r===_selFim.r && pos.c===_selFim.c)) return;
-            e.preventDefault(); _selFim = pos; _destacar();
-            if (document.activeElement && tbody.contains(document.activeElement)) document.activeElement.blur();
-        });
-
-        document.addEventListener('mouseup', () => { _arrastando = false; });
-
-        tbody.addEventListener('focusin', function(e) {
-            if (_arrastando) return;
-            const el = e.target.closest('input');
-            if (!el) return;
-            const pos = _posicao(el);
-            if (!pos) return;
-            _selIni = pos; _selFim = pos; _destacar();
-        });
-
-        tbody.addEventListener('keydown', function(e) {
-            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-            if (!_selIni || !_selFim) return;
-            const cells = _celulas(_selIni.r,_selIni.c,_selFim.r,_selFim.c);
-            if (cells.length > 1) { e.preventDefault(); cells.forEach(el => { el.value=''; }); }
-        });
-
-        document.addEventListener('mousedown', function(e) {
-            if (!tbody.contains(e.target)) { _destacar(); _selIni=null; _selFim=null; }
-        });
-    });
-}
 
 function calcularTotaisEfetivo() {
     const ops  = document.querySelectorAll('.fm-ef-op');
@@ -2822,6 +2554,166 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         carregarDadosDoPainel().catch(() => {});
     }, 5 * 60 * 1000);
+
+    // ── Seleção múltipla + paste — Plano de Chamada ──────────────────────
+    let _pcSelInicio = null, _pcSelFim = null, _pcArrastando = false;
+
+    function _pcPos(el) {
+        const tb = document.getElementById('fm-pc-body');
+        if (!tb) return null;
+        const rows = Array.from(tb.querySelectorAll('tr'));
+        for (let r=0;r<rows.length;r++) {
+            const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
+            const c = cells.indexOf(el);
+            if (c!==-1) return {r,c};
+        }
+        return null;
+    }
+    function _pcCels(r1,c1,r2,c2) {
+        const tb = document.getElementById('fm-pc-body');
+        if (!tb) return [];
+        const rows=Array.from(tb.querySelectorAll('tr'));
+        const rMin=Math.min(r1,r2),rMax=Math.max(r1,r2),cMin=Math.min(c1,c2),cMax=Math.max(c1,c2);
+        const els=[];
+        for(let r=rMin;r<=rMax;r++){const cells=rows[r]?.querySelectorAll('input,textarea')||[];for(let c=cMin;c<=cMax;c++){if(cells[c])els.push(cells[c]);}}
+        return els;
+    }
+    function _pcDest() {
+        document.querySelectorAll('.fm-pc-sel').forEach(el=>el.classList.remove('fm-pc-sel'));
+        if(_pcSelInicio&&_pcSelFim) _pcCels(_pcSelInicio.r,_pcSelInicio.c,_pcSelFim.r,_pcSelFim.c).forEach(el=>el.classList.add('fm-pc-sel'));
+    }
+    document.addEventListener('mousedown', function(e) {
+        const tb = document.getElementById('fm-pc-body');
+        if (!tb) return;
+        if (!tb.contains(e.target)) { document.querySelectorAll('.fm-pc-sel').forEach(el=>el.classList.remove('fm-pc-sel')); _pcSelInicio=null; _pcSelFim=null; return; }
+        const el = e.target.closest('input,textarea'); if (!el) return;
+        const pos = _pcPos(el); if (!pos) return;
+        if (e.shiftKey && _pcSelInicio) { e.preventDefault(); _pcSelFim=pos; _pcDest(); el.blur(); }
+        else { _pcSelInicio=pos; _pcSelFim=pos; _pcArrastando=true; _pcDest(); }
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!_pcArrastando||!_pcSelInicio) return;
+        const tb=document.getElementById('fm-pc-body'); if(!tb||!tb.contains(e.target)) return;
+        const el=e.target.closest('input,textarea'); if(!el) return;
+        const pos=_pcPos(el); if(!pos||(_pcSelFim&&pos.r===_pcSelFim.r&&pos.c===_pcSelFim.c)) return;
+        e.preventDefault(); _pcSelFim=pos; _pcDest();
+        if(document.activeElement&&tb.contains(document.activeElement)) document.activeElement.blur();
+    });
+    document.addEventListener('mouseup', ()=>{ _pcArrastando=false; });
+    document.addEventListener('focusin', function(e) {
+        if (_pcArrastando) return;
+        const tb=document.getElementById('fm-pc-body'); if(!tb||!tb.contains(e.target)) return;
+        const el=e.target.closest('input,textarea'); if(!el) return;
+        const pos=_pcPos(el); if(!pos) return;
+        _pcSelInicio=pos; _pcSelFim=pos; _pcDest();
+    });
+    document.addEventListener('keydown', function(e) {
+        if(e.key!=='Delete'&&e.key!=='Backspace') return;
+        const tb=document.getElementById('fm-pc-body'); if(!tb||!_pcSelInicio||!_pcSelFim) return;
+        const cells=_pcCels(_pcSelInicio.r,_pcSelInicio.c,_pcSelFim.r,_pcSelFim.c);
+        if(cells.length>1){e.preventDefault();cells.forEach(el=>{el.value=''});}
+    });
+    document.addEventListener('paste', function(e) {
+        const tb=document.getElementById('fm-pc-body'); if(!tb||!tb.contains(e.target)) return;
+        const target=e.target.closest('input,textarea'); if(!target) return;
+        const rows=Array.from(tb.querySelectorAll('tr'));
+        const rowIdx=rows.findIndex(tr=>tr.contains(target)); if(rowIdx===-1) return;
+        const cells=Array.from(rows[rowIdx].querySelectorAll('input,textarea'));
+        const colIdx=cells.findIndex(el=>el===target); if(colIdx===-1) return;
+        const texto=(e.clipboardData||window.clipboardData).getData('text');
+        const linhas=texto.split(/?
+/).map(l=>l.trim()).filter(l=>l);
+        if(linhas.length<=1) return;
+        e.preventDefault();
+        linhas.forEach((val,i)=>{
+            if(rowIdx+i>=tb.querySelectorAll('tr').length) adicionarLinhaPC();
+            const tr=tb.querySelectorAll('tr')[rowIdx+i];
+            const el=tr?.querySelectorAll('input,textarea')[colIdx];
+            if(el) el.value=val;
+        });
+    });
+
+    // ── Seleção múltipla + paste — Viaturas e Embarcações ────────────────
+    ['fm-vtr-body','fm-emb-body'].forEach(tbodyId => {
+        let _si=null,_sf=null,_ar=false;
+        const addFn = tbodyId==='fm-vtr-body' ? ()=>adicionarLinhaVtr() : ()=>adicionarLinhaEmb();
+
+        function _pos(el) {
+            const tb=document.getElementById(tbodyId); if(!tb) return null;
+            const rows=Array.from(tb.querySelectorAll('tr'));
+            for(let r=0;r<rows.length;r++){const cells=Array.from(rows[r].querySelectorAll('input'));const c=cells.indexOf(el);if(c!==-1)return{r,c};}
+            return null;
+        }
+        function _cels(r1,c1,r2,c2) {
+            const tb=document.getElementById(tbodyId); if(!tb) return [];
+            const rows=Array.from(tb.querySelectorAll('tr'));
+            const rMin=Math.min(r1,r2),rMax=Math.max(r1,r2),cMin=Math.min(c1,c2),cMax=Math.max(c1,c2);
+            const els=[];
+            for(let r=rMin;r<=rMax;r++){const cells=rows[r]?.querySelectorAll('input')||[];for(let c=cMin;c<=cMax;c++){if(cells[c])els.push(cells[c]);}}
+            return els;
+        }
+        function _dest() {
+            const tb=document.getElementById(tbodyId); if(!tb) return;
+            tb.querySelectorAll('.fm-pc-sel').forEach(el=>el.classList.remove('fm-pc-sel'));
+            if(_si&&_sf) _cels(_si.r,_si.c,_sf.r,_sf.c).forEach(el=>el.classList.add('fm-pc-sel'));
+        }
+        document.addEventListener('mousedown', function(e) {
+            const tb=document.getElementById(tbodyId); if(!tb) return;
+            if(!tb.contains(e.target)){_dest();_si=null;_sf=null;return;}
+            const el=e.target.closest('input'); if(!el) return;
+            const pos=_pos(el); if(!pos) return;
+            if(e.shiftKey&&_si){e.preventDefault();_sf=pos;_dest();el.blur();}
+            else{_si=pos;_sf=pos;_ar=true;_dest();}
+        });
+        document.addEventListener('mousemove', function(e) {
+            if(!_ar||!_si) return;
+            const tb=document.getElementById(tbodyId); if(!tb) return;
+            const el=e.target.closest('input'); if(!el||!tb.contains(el)) return;
+            const pos=_pos(el); if(!pos||(_sf&&pos.r===_sf.r&&pos.c===_sf.c)) return;
+            e.preventDefault();_sf=pos;_dest();
+        });
+        document.addEventListener('mouseup',()=>{_ar=false;});
+        document.addEventListener('focusin',function(e){
+            if(_ar) return;
+            const tb=document.getElementById(tbodyId); if(!tb||!tb.contains(e.target)) return;
+            const el=e.target.closest('input'); if(!el) return;
+            const pos=_pos(el); if(!pos) return;
+            _si=pos;_sf=pos;_dest();
+        });
+        document.addEventListener('keydown',function(e){
+            if(e.key!=='Delete'&&e.key!=='Backspace') return;
+            const tb=document.getElementById(tbodyId); if(!tb||!_si||!_sf) return;
+            const cells=_cels(_si.r,_si.c,_sf.r,_sf.c);
+            if(cells.length>1){e.preventDefault();cells.forEach(el=>{el.value=''});}
+        });
+        document.addEventListener('paste',function(e){
+            const tb=document.getElementById(tbodyId); if(!tb||!tb.contains(e.target)) return;
+            const target=e.target.closest('input'); if(!target) return;
+            const rows=Array.from(tb.querySelectorAll('tr'));
+            const rowIdx=rows.findIndex(tr=>tr.contains(target)); if(rowIdx===-1) return;
+            const cells=Array.from(rows[rowIdx].querySelectorAll('input'));
+            const colIdx=cells.findIndex(el=>el===target); if(colIdx===-1) return;
+            const texto=(e.clipboardData||window.clipboardData).getData('text');
+            const linhas=texto.split(/?
+/).map(l=>l.trim()).filter(l=>l);
+            if(linhas.length<=1) return;
+            e.preventDefault();
+            linhas.forEach((val,i)=>{
+                if(rowIdx+i>=tb.querySelectorAll('tr').length) addFn();
+                const tr=tb.querySelectorAll('tr')[rowIdx+i];
+                const el=tr?.querySelectorAll('input')[colIdx];
+                if(el) el.value=val;
+            });
+        });
+    });
+
+    // Auto-resize textareas
+    document.addEventListener('input',function(e){
+        if(e.target.tagName==='TEXTAREA'&&e.target.style.resize==='none'){
+            e.target.style.height='auto';
+            e.target.style.height=e.target.scrollHeight+'px';
+        }
+    });
 });
 </script>
 </body>
