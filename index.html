@@ -348,11 +348,6 @@
         .fm-vtr-sel{background:#c8e6c9!important;outline:2px solid #2e7d32!important;outline-offset:-1px}
         tr.fm-vtr-linha-sel td{background:#e8f5e9!important;outline:none}
         tr.fm-vtr-linha-sel td:first-child{border-left:3px solid #2e7d32!important}
-        /* Célula combinada Tipo · Prefixo */
-        .fm-vtr-celula-comb{display:flex;align-items:center;gap:0;width:100%}
-        .fm-vtr-celula-comb .fm-vtr-tipo{flex:2;min-width:0;border-right:1px solid #ddd}
-        .fm-vtr-celula-comb .fm-vtr-prefixo{flex:1;min-width:80px;max-width:130px;font-weight:700;font-family:monospace;font-size:.82rem}
-        .fm-vtr-sep{color:#bbb;font-size:1rem;padding:0 4px;user-select:none;flex-shrink:0}
 
         /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
         .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
@@ -842,20 +837,20 @@
 
                     <!-- ABA 3: VIATURAS E EMBARCAÇÕES -->
                     <div class="fm-tab-conteudo" id="fm-tab-3">
-                        <p class="fm-tab-desc">Informe o tipo/prefixo e condição de cada viatura e embarcação.</p>
+                        <p class="fm-tab-desc">Informe o tipo, prefixo e condição de cada viatura e embarcação.</p>
                         <h6 class="fm-subtitulo">🚒 Viaturas</h6>
                         <div style="overflow-x:auto">
                         <table class="fm-tabela" id="fm-tabela-vtr">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:320px">TIPO DE VIATURA / PREFIXO · ID</th>
+                                    <th style="text-align:left;min-width:320px">TIPO DE VIATURA E PREFIXO / ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-vtr-body">
-                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: ABT — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Ex: ABT-12"></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: ABT-12 — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: UR-205 — Unidade de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -866,13 +861,13 @@
                         <table class="fm-tabela" id="fm-tabela-emb">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:320px">TIPO DE EMBARCAÇÃO / PREFIXO · ID</th>
+                                    <th style="text-align:left;min-width:320px">TIPO DE EMBARCAÇÃO E PREFIXO / ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-emb-body">
-                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: Lancha de Resgate" style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: LCH-01 — Lancha de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -2308,14 +2303,14 @@ function calcularTotaisFormAA() {
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
 function adicionarLinhaEmb() {
     const tbody = document.getElementById('fm-emb-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
@@ -2358,19 +2353,17 @@ function preencherTabelaEsp(esp) {
 function preencherTabelaVeiculos(tbodyId, rows) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
-    // Garante linhas suficientes
     const addFn = tbodyId === 'fm-vtr-body' ? adicionarLinhaVtr : adicionarLinhaEmb;
     while (tbody.children.length < rows.length) addFn();
     rows.forEach((row, i) => {
-        const tr = tbody.children[i];
+        const tr  = tbody.children[i];
         if (!tr) return;
-        // col 0 = textarea (tipo), col 1 = input (prefixo), col 2 = select (condição)
-        const tipo   = tr.querySelector('textarea.fm-vtr-tipo');
-        const pref   = tr.querySelector('input.fm-vtr-prefixo');
-        const sel    = tr.querySelector('select');
-        if (tipo) tipo.value = row[0]||'';
-        if (pref) pref.value = row[1]||'';
-        if (sel)  sel.value  = row[2]||'Operacional';
+        const ta  = tr.querySelector('textarea.fm-vtr-unico');
+        const sel = tr.querySelector('select');
+        // row[0] = tipo, row[1] = prefixo (legado separado), row[2] = condição
+        // Se vier do formato novo (campo único), row[0] já contém tudo junto
+        if (ta)  ta.value  = row[1] ? `${row[0]} — ${row[1]}`.trim() : (row[0]||'');
+        if (sel) sel.value = row[2]||'Operacional';
     });
 }
 
@@ -2439,18 +2432,16 @@ function coletarPayloadMensal(u, uid) {
 
     // Viaturas
     const viaturas = Array.from(document.querySelectorAll('#fm-vtr-body tr')).map(tr => {
-        const tipo = tr.querySelector('textarea.fm-vtr-tipo');
-        const pref = tr.querySelector('input.fm-vtr-prefixo');
-        const sel  = tr.querySelector('select');
-        return [tipo?.value||'', pref?.value||'', sel?.value||'Operacional'];
+        const ta  = tr.querySelector('textarea.fm-vtr-unico');
+        const sel = tr.querySelector('select');
+        return [ta?.value||'', '', sel?.value||'Operacional'];
     }).filter(r => r[0]);
 
     // Embarcações
     const embarcacoes = Array.from(document.querySelectorAll('#fm-emb-body tr')).map(tr => {
-        const tipo = tr.querySelector('textarea.fm-vtr-tipo');
-        const pref = tr.querySelector('input.fm-vtr-prefixo');
-        const sel  = tr.querySelector('select');
-        return [tipo?.value||'', pref?.value||'', sel?.value||'Operacional'];
+        const ta  = tr.querySelector('textarea.fm-vtr-unico');
+        const sel = tr.querySelector('select');
+        return [ta?.value||'', '', sel?.value||'Operacional'];
     }).filter(r => r[0]);
 
     // Materiais
