@@ -587,7 +587,7 @@
                                 <div class="legend-custom">
                                     <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Em condições</div>
                                     <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixada</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixadas</div>
                                 </div>
                                 <div class="status-grid" id="vtrStatusBadges"></div>
                             </div>
@@ -599,7 +599,7 @@
                                 <div class="legend-custom">
                                     <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Em condições</div>
                                     <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixada</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixadas</div>
                                 </div>
                                 <div class="status-grid" id="embStatusBadges"></div>
                             </div>
@@ -1112,10 +1112,10 @@ function iniciarViaturas() {
     // Resumo cards
     document.getElementById('vtr-resumo').innerHTML = `
         <div class="vtr-resumo-card"><span class="rotulo">TOTAL VIATURAS</span><span class="numero">${totalVtr}</span><span style="font-size:.75rem;opacity:.8">VIATURAS</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">VIATURAS OPER.</span><span class="numero">${vtrOp}</span><span style="font-size:.75rem;opacity:.8">OPERACIONAIS</span></div>
+        <div class="vtr-resumo-card"><span class="rotulo">VIATURAS EM COND.</span><span class="numero">${vtrOp}</span><span style="font-size:.75rem;opacity:.8">EM CONDIÇÕES</span></div>
         <div class="vtr-resumo-card"><span class="rotulo">EM MANUTENÇÃO</span><span class="numero">${vtrMt}</span><span style="font-size:.75rem;opacity:.8">VIATURAS</span></div>
         <div class="vtr-resumo-card"><span class="rotulo">TOTAL EMBARCAÇÕES</span><span class="numero">${totalEmb}</span><span style="font-size:.75rem;opacity:.8">EMBARCAÇÕES</span></div>
-        <div class="vtr-resumo-card"><span class="rotulo">EMBARCAÇÕES OPER.</span><span class="numero">${embOp}</span><span style="font-size:.75rem;opacity:.8">OPERACIONAIS</span></div>
+        <div class="vtr-resumo-card"><span class="rotulo">EMBARCAÇÕES EM COND.</span><span class="numero">${embOp}</span><span style="font-size:.75rem;opacity:.8">EM CONDIÇÕES</span></div>
         <div class="vtr-resumo-card"><span class="rotulo">EM MANUTENÇÃO</span><span class="numero">${embMt}</span><span style="font-size:.75rem;opacity:.8">EMBARCAÇÕES</span></div>
     `;
 
@@ -1123,12 +1123,12 @@ function iniciarViaturas() {
     document.getElementById('vtrStatusBadges').innerHTML = `
         <div class="status-badge sb-operacional"><span class="sb-num">${vtrOp}</span><span class="sb-label">Em condições</span></div>
         <div class="status-badge sb-manutencao"><span class="sb-num">${vtrMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${vtrIn}</span><span class="sb-label">Baixada</span></div>
+        <div class="status-badge sb-inoperante"><span class="sb-num">${vtrIn}</span><span class="sb-label">Baixadas</span></div>
     `;
     document.getElementById('embStatusBadges').innerHTML = `
         <div class="status-badge sb-operacional"><span class="sb-num">${embOp}</span><span class="sb-label">Em condições</span></div>
         <div class="status-badge sb-manutencao"><span class="sb-num">${embMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${embIn}</span><span class="sb-label">Baixada</span></div>
+        <div class="status-badge sb-inoperante"><span class="sb-num">${embIn}</span><span class="sb-label">Baixadas</span></div>
     `;
 
     const labelsVtr = nomesUnidades;
@@ -1155,7 +1155,7 @@ function iniciarViaturas() {
         data:{labels:labelsVtr, datasets:[
             {label:'Em condições',data:opVtr,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
             {label:'Manutenção', data:mtVtr,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Baixada',        data:inVtr,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
+            {label:'Baixadas',       data:inVtr,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
         ]},
         options:opcoesVtr
     });
@@ -1165,7 +1165,7 @@ function iniciarViaturas() {
         data:{labels:labelsVtr, datasets:[
             {label:'Em condições',data:opEmb,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
             {label:'Manutenção', data:mtEmb,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Baixada',        data:inEmb,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
+            {label:'Baixadas',       data:inEmb,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
         ]},
         options:opcoesVtr
     });
