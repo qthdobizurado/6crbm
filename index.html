@@ -835,15 +835,15 @@
                         <table class="fm-tabela" id="fm-tabela-vtr">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE VIATURA</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
+                                    <th style="text-align:left;min-width:180px">TIPO DE VIATURA</th>
+                                    <th style="text-align:left;min-width:130px">PREFIXO / ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-vtr-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT — Auto Bomba Tanque"></td><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Ex: ABT — Auto Bomba Tanque"></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -854,14 +854,14 @@
                         <table class="fm-tabela" id="fm-tabela-emb">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE EMBARCAÇÃO</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
+                                    <th style="text-align:left;min-width:180px">TIPO DE EMBARCAÇÃO</th>
+                                    <th style="text-align:left;min-width:130px">PREFIXO / ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-emb-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: Lancha de Resgate"></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Ex: Lancha de Resgate"></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -1986,6 +1986,33 @@ function iniciarFormularioMensal() {
 
     abrirFmTab(1);
 
+    // Paste inteligente em Viaturas e Embarcações
+    ['fm-vtr-body','fm-emb-body'].forEach(tbodyId => {
+        const addFn = tbodyId === 'fm-vtr-body' ? adicionarLinhaVtr : adicionarLinhaEmb;
+        document.getElementById(tbodyId).addEventListener('paste', function(e) {
+            const target = e.target.closest('input');
+            if (!target) return;
+            const tbody = document.getElementById(tbodyId);
+            const rows   = Array.from(tbody.querySelectorAll('tr'));
+            const rowIdx = rows.findIndex(tr => tr.contains(target));
+            if (rowIdx === -1) return;
+            const cells  = Array.from(rows[rowIdx].querySelectorAll('input'));
+            const colIdx = cells.findIndex(el => el === target);
+            if (colIdx === -1) return;
+            const texto  = (e.clipboardData || window.clipboardData).getData('text');
+            const linhas = texto.split(/?
+/).map(l => l.trim()).filter(l => l);
+            if (linhas.length <= 1) return;
+            e.preventDefault();
+            linhas.forEach((val, i) => {
+                if (rowIdx + i >= tbody.querySelectorAll('tr').length) addFn();
+                const tr = tbody.querySelectorAll('tr')[rowIdx + i];
+                const el = tr.querySelectorAll('input')[colIdx];
+                if (el) el.value = val;
+            });
+        });
+    });
+
     // Paste inteligente no Plano de Chamada — distribui linhas coladas em qualquer coluna
     document.getElementById('fm-pc-body').addEventListener('paste', function(e) {
         const target = e.target;
@@ -2144,6 +2171,88 @@ function iniciarFormularioMensal() {
             _pcSelFim    = null;
         }
     });
+
+    // ── Seleção múltipla de células em Viaturas e Embarcações ────────────
+    ['fm-vtr-body','fm-emb-body'].forEach(tbodyId => {
+        let _selIni = null, _selFim = null, _arrastando = false;
+
+        function _posicao(el) {
+            const tbody = document.getElementById(tbodyId);
+            const rows  = Array.from(tbody.querySelectorAll('tr'));
+            for (let r = 0; r < rows.length; r++) {
+                const cells = Array.from(rows[r].querySelectorAll('input'));
+                const c = cells.indexOf(el);
+                if (c !== -1) return {r, c};
+            }
+            return null;
+        }
+
+        function _celulas(r1,c1,r2,c2) {
+            const tbody = document.getElementById(tbodyId);
+            const rows  = Array.from(tbody.querySelectorAll('tr'));
+            const rMin=Math.min(r1,r2), rMax=Math.max(r1,r2);
+            const cMin=Math.min(c1,c2), cMax=Math.max(c1,c2);
+            const els = [];
+            for (let r=rMin; r<=rMax; r++) {
+                const cells = rows[r]?.querySelectorAll('input') || [];
+                for (let c=cMin; c<=cMax; c++) { if(cells[c]) els.push(cells[c]); }
+            }
+            return els;
+        }
+
+        function _destacar() {
+            document.querySelectorAll(`#${tbodyId} .fm-pc-sel`).forEach(el => el.classList.remove('fm-pc-sel'));
+            if (!_selIni || !_selFim) return;
+            _celulas(_selIni.r,_selIni.c,_selFim.r,_selFim.c).forEach(el => el.classList.add('fm-pc-sel'));
+        }
+
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+
+        tbody.addEventListener('mousedown', function(e) {
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = _posicao(el);
+            if (!pos) return;
+            if (e.shiftKey && _selIni) {
+                e.preventDefault(); _selFim = pos; _destacar(); el.blur();
+            } else {
+                _selIni = pos; _selFim = pos; _arrastando = true; _destacar();
+            }
+        });
+
+        tbody.addEventListener('mousemove', function(e) {
+            if (!_arrastando || !_selIni) return;
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = _posicao(el);
+            if (!pos || (_selFim && pos.r===_selFim.r && pos.c===_selFim.c)) return;
+            e.preventDefault(); _selFim = pos; _destacar();
+            if (document.activeElement && tbody.contains(document.activeElement)) document.activeElement.blur();
+        });
+
+        document.addEventListener('mouseup', () => { _arrastando = false; });
+
+        tbody.addEventListener('focusin', function(e) {
+            if (_arrastando) return;
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = _posicao(el);
+            if (!pos) return;
+            _selIni = pos; _selFim = pos; _destacar();
+        });
+
+        tbody.addEventListener('keydown', function(e) {
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            if (!_selIni || !_selFim) return;
+            const cells = _celulas(_selIni.r,_selIni.c,_selFim.r,_selFim.c);
+            if (cells.length > 1) { e.preventDefault(); cells.forEach(el => { el.value=''; }); }
+        });
+
+        document.addEventListener('mousedown', function(e) {
+            if (!tbody.contains(e.target)) { _destacar(); _selIni=null; _selFim=null; }
+        });
+    });
 }
 
 function calcularTotaisEfetivo() {
@@ -2180,17 +2289,21 @@ function calcularTotaisFormAA() {
     document.getElementById('fm-aa-area-tot').textContent = area.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+function _novaLinhaVeiculo() {
+    return '<td><input type="text" class="fm-input-cell fm-vtr-tipo" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell fm-vtr-pref" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+}
+
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = _novaLinhaVeiculo();
     tbody.appendChild(tr);
 }
 
 function adicionarLinhaEmb() {
     const tbody = document.getElementById('fm-emb-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = _novaLinhaVeiculo();
     tbody.appendChild(tr);
 }
 
@@ -2236,7 +2349,7 @@ function preencherTabelaVeiculos(tbodyId, rows) {
     // Garante linhas suficientes
     while (tbody.children.length < rows.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+        tr.innerHTML = _novaLinhaVeiculo();
         tbody.appendChild(tr);
     }
     rows.forEach((row, i) => {
