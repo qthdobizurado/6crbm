@@ -1407,7 +1407,7 @@ function gerarEspecialistasUnidade(id) {
 }
 
 function gerarViatura(id) {
-    return `<div class="controle-conteudo" id="u${id}-c3"><h4>Controle de Viaturas e Embarcações</h4><h5 class="titulo-secao">Viaturas</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE VIATURA</th><th>PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-tipo" style="width:20%">—</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table><h5 class="titulo-secao">Embarcações</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE EMBARCAÇÃO COM MOTOR DE POPA</th><th>PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-tipo" style="width:20%">—</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table></div>`;
+    return `<div class="controle-conteudo" id="u${id}-c3"><h4>Controle de Viaturas e Embarcações</h4><h5 class="titulo-secao">Viaturas</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE VIATURA E PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table><h5 class="titulo-secao">Embarcações</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE EMBARCAÇÃO E PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table></div>`;
 }
 
 function gerarMateriais(id) {
@@ -2947,12 +2947,14 @@ function atualizarAbaUnidade(idx, r) {
             if (tabela) {
                 tabela.innerHTML = vtrs.map(v => {
                     const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                    // v[0] = campo único (novo formato) ou tipo (formato legado)
+                    // v[1] = prefixo (formato legado, vazio no novo formato)
+                    const descricao = v[1] ? `${v[0]} — ${v[1]}` : (v[0]||'—');
                     return `<tr>
-                        <td class="col-tipo">${v[0]||'—'}</td>
-                        <td class="col-tipo" style="width:20%;font-weight:700">${v[1]||'—'}</td>
+                        <td class="col-tipo">${descricao}</td>
                         <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
                     </tr>`;
-                }).join('') || '<tr><td colspan="3"><em>Nenhuma viatura cadastrada</em></td></tr>';
+                }).join('') || '<tr><td colspan="2"><em>Nenhuma viatura cadastrada</em></td></tr>';
             }
         }
     } catch(e) {}
@@ -2962,18 +2964,18 @@ function atualizarAbaUnidade(idx, r) {
         if (r.Embarcacoes) {
             const embs = JSON.parse(r.Embarcacoes);
             const tabelas = document.querySelectorAll(`#u${uid}-c3 table`);
-            const tabela  = tabelas[1]; // segunda tabela = embarcações
+            const tabela  = tabelas[1];
             if (tabela) {
                 const tbody = tabela.querySelector('tbody');
                 if (tbody) {
                     tbody.innerHTML = embs.map(v => {
                         const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                        const descricao = v[1] ? `${v[0]} — ${v[1]}` : (v[0]||'—');
                         return `<tr>
-                            <td class="col-tipo">${v[0]||'—'}</td>
-                            <td class="col-tipo" style="width:20%;font-weight:700">${v[1]||'—'}</td>
+                            <td class="col-tipo">${descricao}</td>
                             <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
                         </tr>`;
-                    }).join('') || '<tr><td colspan="3"><em>Nenhuma embarcação cadastrada</em></td></tr>';
+                    }).join('') || '<tr><td colspan="2"><em>Nenhuma embarcação cadastrada</em></td></tr>';
                 }
             }
         }
