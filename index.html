@@ -13,7 +13,7 @@
             --cinza:#495057;--cinza-esc:#343a40;--texto:#2c3e50;--fundo:#f8f9fa;
             --verde:#28a745;--azul-claro:#17a2b8;--laranja:#FF8C00;
             --azul-oficiais:#1e88e5;--laranja-pracas:#fb8c00;
-            --u1:#1e5fa5;--u2:#fb8c00;--u3:#28a745;--u4:#d85a30;--u5:#888780;
+            --u1:#1e5fa5;--u2:#fb8c00;--u3:#28a745;--u4:#d85a30;--u5:#888780;--u6:#6a1fb5;
         }
         body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);min-height:100vh;color:var(--texto)}
         header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;text-align:center;padding:30px 20px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
@@ -417,7 +417,7 @@
 <body>
 
 <!-- MODAL DE SENHA -->
-<div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center">
+<div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:12px;padding:32px 28px;max-width:360px;width:90%;border-top:6px solid var(--vermelho);box-shadow:0 8px 32px rgba(0,0,0,.3);text-align:center">
         <div style="font-size:2rem;margin-bottom:8px">🔒</div>
         <h3 style="color:var(--vermelho);text-transform:uppercase;font-size:1rem;margin-bottom:6px">Acesso Restrito</h3>
@@ -2543,6 +2543,7 @@ function calcularTotaisFormAA() {
     if (!tbody) return;
     let pop=0, area=0;
     tbody.querySelectorAll('tr').forEach(tr => {
+        // input[type=number] captura apenas os 3 numéricos: [0]=Distância, [1]=População, [2]=Área
         const cells = tr.querySelectorAll('input[type=number]');
         pop  += parseFloat(cells[1]?.value)||0;
         area += parseFloat(cells[2]?.value)||0;
