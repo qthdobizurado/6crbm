@@ -2450,9 +2450,15 @@ function aplicarDadosDiarios(registros) {
         const idx = unidades.findIndex(u => u.id == r.unidadeId);
         if (idx === -1) return;
 
-        // Último preenchimento diário
+        // Último preenchimento diário — só atualiza se esta unidade tem dado
         const elAttD = document.getElementById(`ultima-att-${idx+1}`);
-        if (elAttD && r.timestamp) elAttD.innerHTML = `🕒 Último preenchimento: <strong>${r.timestamp}</strong>`;
+        if (elAttD && r.timestamp) {
+            const ts = new Date(r.timestamp);
+            const fmt = isNaN(ts)
+                ? r.timestamp
+                : ts.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+            elAttD.innerHTML = `🕒 Último preenchimento: <strong>${fmt}</strong>`;
+        }
 
         // Quadro diário
         dadosQuadroDiario[idx] = {
@@ -2512,7 +2518,13 @@ function aplicarDadosMensais(registros) {
 
         // Atualiza último preenchimento
         const elAtt = document.getElementById(`ultima-att-${idx+1}`);
-        if (elAtt && r.Timestamp) elAtt.innerHTML = `🕒 Último preenchimento: <strong>${r.Timestamp}</strong>`;
+        if (elAtt && r.Timestamp) {
+            const ts = new Date(r.Timestamp);
+            const fmt = isNaN(ts)
+                ? r.Timestamp
+                : ts.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+            elAtt.innerHTML = `🕒 Último preenchimento: <strong>${fmt}</strong>`;
+        }
 
         // Atualiza a aba da unidade no painel
         atualizarAbaUnidade(idx, r);
