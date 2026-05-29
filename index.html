@@ -1908,13 +1908,11 @@ async function enviarDiario() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    enviarViaForm(SCRIPT_URL_DIARIO, payload, btn, sta,
+    await enviarViaForm(SCRIPT_URL_DIARIO, payload, btn, sta,
         (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM'));
 }
 
-/* ===================== ENVIO VIA GET (igual ao script original) ===================== */
-// Envia como GET com payload na URL — igual ao script de exemplo que funcionava.
-// GET não sofre o problema de redirect CORS do Apps Script.
+/* ===================== ENVIO VIA POST ===================== */
 async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
@@ -2078,7 +2076,7 @@ function iniciarFormularioMensal() {
         const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
         const els = [];
         for (let r = rMin; r <= rMax; r++) {
-            const cells = rows[r]?.querySelectorAll('input,textarea') || [];
+            const cells = Array.from(rows[r]?.querySelectorAll('input,textarea') || []);
             for (let c = cMin; c <= cMax; c++) {
                 if (cells[c]) els.push(cells[c]);
             }
@@ -2087,7 +2085,7 @@ function iniciarFormularioMensal() {
     }
 
     function _pcLimparDestaque() {
-        document.querySelectorAll('.fm-pc-sel').forEach(el => el.classList.remove('fm-pc-sel'));
+        document.getElementById('fm-pc-body')?.querySelectorAll('.fm-pc-sel').forEach(el => el.classList.remove('fm-pc-sel'));
     }
 
     function _pcDestacar() {
@@ -2334,8 +2332,8 @@ function iniciarFormularioMensal() {
             const sels = linhasDe(selInicio, selFim);
             if (sels.length <= 1) return;
             const af = document.activeElement;
-            // Só age se o foco está nas linhas selecionadas ou fora de qualquer input
-            if (af && af.tagName === 'INPUT' || af?.tagName === 'TEXTAREA') {
+            // Só age se o foco está nas linhas selecionadas ou no focusTrap (sem foco em input externo)
+            if (af && (af.tagName === 'INPUT' || af.tagName === 'TEXTAREA')) {
                 if (!sels.some(tr => tr.contains(af))) return;
             }
             e.preventDefault();
@@ -2611,9 +2609,10 @@ function preencherTabelaVeiculos(tbodyId, rows) {
         if (!tr) return;
         const ta  = tr.querySelector('textarea.fm-vtr-unico');
         const sel = tr.querySelector('select');
-        // row[0] = tipo, row[1] = prefixo (legado separado), row[2] = condição
-        // Se vier do formato novo (campo único), row[0] já contém tudo junto
-        if (ta)  ta.value  = row[1] ? `${row[0]} — ${row[1]}`.trim() : (row[0]||'');
+        // row[0] = campo único (novo formato) ou tipo (formato legado)
+        // row[1] = prefixo (formato legado, vazio '' no novo formato)
+        const prefixo = (row[1] || '').trim();
+        if (ta)  ta.value  = prefixo ? `${row[0]} — ${prefixo}` : (row[0]||'');
         if (sel) sel.value = row[2]||'Operacional';
     });
 }
@@ -2765,16 +2764,12 @@ async function enviarMensal() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    enviarViaForm(SCRIPT_URL_MENSAL, payload, btn, sta, nomeCurto);
+    await enviarViaForm(SCRIPT_URL_MENSAL, payload, btn, sta, nomeCurto);
 }
 
 /* ===================== CARREGAR DADOS DO PAINEL ===================== */
 
 async function carregarDadosDoPainel() {
-    // Leitura usa /api/proxy (Netlify) para evitar CORS do Apps Script
-    // Envio usa a URL direta do Apps Script via GET (sem leitura de resposta)
-    const proxyUrl = '/api/proxy';
-
     // Atualiza timestamp independente de ter dados
     const elTs = document.getElementById('quadro-data-hora');
 
@@ -2812,9 +2807,12 @@ async function carregarDadosDoPainel() {
         // Atualiza dashboards secundários se já tiverem sido abertos
         try { if (window._vtrPronto) { ['chartViaturas','chartEmbarcacoes'].forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} }); } } catch(e) {}
         try { if (window._matPronto) { try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {} } } catch(e) {}
-        // Especialistas — sempre recria os mini gráficos pois dadosEsp foi atualizado
-        try { if (window._espPronto) { window._espPronto = false; iniciarEspecialistas(); } } catch(e) {}
-        // Área de Atuação — força re-render pois dadosAreaAtuacao foi atualizado
+        // Especialistas — recria mini gráficos se dashboard já aberto, senão só reseta a flag
+        try {
+            if (window._espPronto) { window._espPronto = false; }
+            if (dashAtual === 1) iniciarEspecialistas();
+        } catch(e) {}
+        // Área de Atuação — força re-render se dashboard já aberto
         try { window._aaPronto = false; if (dashAtual === 4) iniciarAreaAtuacao(); } catch(e) {}
     }
 
@@ -2996,9 +2994,8 @@ function atualizarAbaUnidade(idx, r) {
             if (tabela) {
                 tabela.innerHTML = vtrs.map(v => {
                     const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-                    // v[0] = campo único (novo formato) ou tipo (formato legado)
-                    // v[1] = prefixo (formato legado, vazio no novo formato)
-                    const descricao = v[1] ? `${v[0]} — ${v[1]}` : (v[0]||'—');
+                    const pref = (v[1]||'').trim();
+                    const descricao = pref ? `${v[0]} — ${pref}` : (v[0]||'—');
                     return `<tr>
                         <td class="col-tipo">${descricao}</td>
                         <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
@@ -3019,7 +3016,8 @@ function atualizarAbaUnidade(idx, r) {
                 if (tbody) {
                     tbody.innerHTML = embs.map(v => {
                         const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-                        const descricao = v[1] ? `${v[0]} — ${v[1]}` : (v[0]||'—');
+                        const pref = (v[1]||'').trim();
+                        const descricao = pref ? `${v[0]} — ${pref}` : (v[0]||'—');
                         return `<tr>
                             <td class="col-tipo">${descricao}</td>
                             <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
