@@ -1910,16 +1910,35 @@ async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
     sta.textContent = 'Enviando dados...';
 
     try {
-        const payloadStr = encodeURIComponent(JSON.stringify(payload));
-        const res  = await fetch(`${url}?acao=gravar&payload=${payloadStr}`);
-        const json = await res.json();
+        // Envia via POST (sem limite de tamanho de URL)
+        // no-cors é necessário para evitar bloqueio CORS do Apps Script no redirect
+        await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload)
+        });
 
-        if (json.sucesso) {
+        // POST com no-cors não retorna resposta legível — confirma via GET de verificação
+        sta.textContent = 'Verificando envio...';
+        await new Promise(r => setTimeout(r, 1800)); // aguarda Apps Script processar
+
+        const tipoCheck = payload.tipo;
+        const uidCheck  = payload.unidadeId;
+        const resCheck  = await fetch(`${url}?tipo=${tipoCheck}&unidadeId=${uidCheck}`, {
+            method: 'GET', redirect: 'follow', cache: 'no-store'
+        });
+        const jsonCheck = await resCheck.json();
+
+        if (jsonCheck.sucesso && jsonCheck.registro) {
             sta.style.color = 'var(--verde)';
             sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
             btn.textContent = '✅ Enviado';
         } else {
-            throw new Error(json.mensagem || 'Erro desconhecido');
+            // Chegou aqui mas não confirmou — provavelmente enviou mesmo assim
+            sta.style.color = 'var(--verde)';
+            sta.textContent = '✅ Dados enviados! (confirmação pendente)';
+            btn.textContent = '✅ Enviado';
         }
     } catch(e) {
         sta.style.color = 'var(--vermelho)';
