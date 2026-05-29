@@ -2034,10 +2034,9 @@ function iniciarFormularioMensal() {
     });
 
     // ── Seleção múltipla de células no Plano de Chamada ──────────────────
-    // Clique normal = seleciona célula. Shift+Clique = expande seleção.
-    // Delete / Backspace com células selecionadas = apaga todas.
-    let _pcSelInicio = null;  // {rowIdx, colIdx}
+    let _pcSelInicio = null;
     let _pcSelFim    = null;
+    let _pcArrastando = false;
 
     function _pcCelulasDe(r1, c1, r2, c2) {
         const tbody = document.getElementById('fm-pc-body');
@@ -2077,22 +2076,25 @@ function iniciarFormularioMensal() {
         return null;
     }
 
-    let _pcArrastando = false;
+    // Elemento invisível que segura o foco após arrastar (permite capturar Delete)
+    const _pcFocusTrap = document.createElement('div');
+    _pcFocusTrap.tabIndex = -1;
+    _pcFocusTrap.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:0;height:0;';
+    document.body.appendChild(_pcFocusTrap);
 
     document.getElementById('fm-pc-body').addEventListener('mousedown', function(e) {
         const el = e.target.closest('input,textarea');
         if (!el) return;
         const pos = _pcPosicao(el);
         if (!pos) return;
-
         if (e.shiftKey && _pcSelInicio) {
             e.preventDefault();
             _pcSelFim = pos;
             _pcDestacar();
-            el.blur();
+            _pcFocusTrap.focus(); // foco no trap para capturar Delete
         } else {
-            _pcSelInicio = pos;
-            _pcSelFim    = pos;
+            _pcSelInicio  = pos;
+            _pcSelFim     = pos;
             _pcArrastando = true;
             _pcDestacar();
         }
@@ -2104,28 +2106,33 @@ function iniciarFormularioMensal() {
         if (!el) return;
         const pos = _pcPosicao(el);
         if (!pos) return;
-        // Só atualiza se mudou de célula
         if (_pcSelFim && pos.r === _pcSelFim.r && pos.c === _pcSelFim.c) return;
         e.preventDefault();
         _pcSelFim = pos;
         _pcDestacar();
-        // Remove foco para não abrir teclado mobile ao arrastar
         if (document.activeElement && document.getElementById('fm-pc-body').contains(document.activeElement)) {
             document.activeElement.blur();
         }
     });
 
     document.addEventListener('mouseup', function() {
-        _pcArrastando = false;
+        if (_pcArrastando) {
+            _pcArrastando = false;
+            // Se terminou com seleção múltipla, coloca foco no trap para capturar Delete
+            const cells = _pcSelInicio && _pcSelFim
+                ? _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
+                : [];
+            if (cells.length > 1) _pcFocusTrap.focus();
+        }
     });
 
     document.getElementById('fm-pc-body').addEventListener('focusin', function(e) {
-        if (_pcArrastando) return; // não interfere durante arrastar
+        if (_pcArrastando) return;
         const el = e.target.closest('input,textarea');
         if (!el) return;
         const pos = _pcPosicao(el);
         if (!pos) return;
-        // Não reseta se há seleção múltipla ativa (usuário pode estar pressionando Delete)
+        // Não reseta se há seleção múltipla ativa
         const cells = _pcSelInicio && _pcSelFim
             ? _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
             : [];
@@ -2135,23 +2142,21 @@ function iniciarFormularioMensal() {
         _pcDestacar();
     });
 
-    // Apagar células selecionadas com Delete ou Backspace
-    // Usa fase de CAPTURA no document para interceptar antes do input processar
+    // Delete / Backspace — fase de captura, funciona com foco no trap ou em qualquer célula
     document.addEventListener('keydown', function(e) {
         if (e.key !== 'Delete' && e.key !== 'Backspace') return;
         if (!_pcSelInicio || !_pcSelFim) return;
-        const tbody = document.getElementById('fm-pc-body');
-        if (!tbody) return;
-        // Só age se o foco está dentro do Plano de Chamada
-        if (!tbody.contains(document.activeElement)) return;
         const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
-        // Apaga se há mais de uma célula selecionada
-        if (cells.length > 1) {
-            e.preventDefault();
-            e.stopPropagation();
-            cells.forEach(el => { el.value = ''; });
-        }
-    }, true); // true = fase de captura — intercepta antes do input
+        if (cells.length <= 1) return;
+        // Só age se o foco está no trap OU dentro do tbody do PC
+        const tbody = document.getElementById('fm-pc-body');
+        const af = document.activeElement;
+        if (af !== _pcFocusTrap && !tbody?.contains(af)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        cells.forEach(el => { el.value = ''; });
+        _pcFocusTrap.focus(); // mantém foco no trap após apagar
+    }, true);
 
     // Clicar fora do Plano de Chamada limpa a seleção
     document.addEventListener('mousedown', function(e) {
