@@ -2125,23 +2125,33 @@ function iniciarFormularioMensal() {
         if (!el) return;
         const pos = _pcPosicao(el);
         if (!pos) return;
+        // Não reseta se há seleção múltipla ativa (usuário pode estar pressionando Delete)
+        const cells = _pcSelInicio && _pcSelFim
+            ? _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c)
+            : [];
+        if (cells.length > 1) return;
         _pcSelInicio = pos;
         _pcSelFim    = pos;
         _pcDestacar();
     });
 
     // Apagar células selecionadas com Delete ou Backspace
-    document.getElementById('fm-pc-body').addEventListener('keydown', function(e) {
+    // Usa fase de CAPTURA no document para interceptar antes do input processar
+    document.addEventListener('keydown', function(e) {
         if (e.key !== 'Delete' && e.key !== 'Backspace') return;
         if (!_pcSelInicio || !_pcSelFim) return;
+        const tbody = document.getElementById('fm-pc-body');
+        if (!tbody) return;
+        // Só age se o foco está dentro do Plano de Chamada
+        if (!tbody.contains(document.activeElement)) return;
         const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
-        // Só apaga se há mais de uma célula selecionada (seleção múltipla)
-        // ou se a célula está vazia (para não interferir com edição normal)
+        // Apaga se há mais de uma célula selecionada
         if (cells.length > 1) {
             e.preventDefault();
+            e.stopPropagation();
             cells.forEach(el => { el.value = ''; });
         }
-    });
+    }, true); // true = fase de captura — intercepta antes do input
 
     // Clicar fora do Plano de Chamada limpa a seleção
     document.addEventListener('mousedown', function(e) {
