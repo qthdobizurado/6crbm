@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Painel de Comando</title>
+    <title>Painel de Comando</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
@@ -238,6 +238,11 @@
         .tabela-veiculo .header-principal th:last-child{border-right:none}
         .tabela-veiculo .col-tipo{background:#f8f9fa;font-weight:600;width:60%;text-align:left;padding-left:10px}
         .tabela-veiculo .col-condicao{width:40%;text-align:left;font-style:italic;padding-left:10px;background:#f8f9fa}
+        .prefixo-tag{display:inline-block;background:#343a40;color:#fff;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:4px;margin-left:8px;letter-spacing:.5px;vertical-align:middle}
+        .badge-condicao{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700;font-style:normal}
+        .badge-operacional{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .badge-manutencao{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
+        .badge-inoperante{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
         .tabela-materiais{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:15px 0}
         .tabela-materiais th,.tabela-materiais td{border:2px solid #000;padding:6px 8px;text-align:center;vertical-align:middle}
         .tabela-materiais .cabecalho{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem}
@@ -1401,7 +1406,7 @@ function gerarEspecialistasUnidade(id) {
 }
 
 function gerarViatura(id) {
-    return `<div class="controle-conteudo" id="u${id}-c3"><h4>Controle de Viaturas e Embarcações</h4><h5 class="titulo-secao">Viaturas</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE VIATURA</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table><h5 class="titulo-secao">Embarcações</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE EMBARCAÇÃO COM MOTOR DE POPA</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table></div>`;
+    return `<div class="controle-conteudo" id="u${id}-c3"><h4>Controle de Viaturas e Embarcações</h4><h5 class="titulo-secao">Viaturas</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE VIATURA</th><th>PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-tipo" style="width:20%">—</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table><h5 class="titulo-secao">Embarcações</h5><table class="tabela-veiculo"><thead><tr class="header-principal"><th>TIPO DE EMBARCAÇÃO COM MOTOR DE POPA</th><th>PREFIXO / ID</th><th>CONDIÇÃO</th></tr></thead><tbody>${Array(3).fill('<tr><td class="col-tipo">Aguardando...</td><td class="col-tipo" style="width:20%">—</td><td class="col-condicao"><em>Aguardando...</em></td></tr>').join('')}</tbody></table></div>`;
 }
 
 function gerarMateriais(id) {
@@ -1695,7 +1700,7 @@ async function verificarURLParams() {
         document.querySelectorAll('nav, .conteudo-aba').forEach(el => el.style.display = 'none');
         abrirAba('links-diario');
         document.getElementById('links-diario').style.display = 'block';
-        document.querySelector('.links-page-wrapper').style.display = 'none';
+        document.querySelector('#links-diario .links-page-wrapper').style.display = 'none';
         document.getElementById('form-diario-wrapper').style.display = 'block';
         document.getElementById('form-diario-unidade-nome').textContent = u.nome;
         document.getElementById('form-diario-titulo').textContent = 'Quadro Diário — ' + new Date().toLocaleDateString('pt-BR');
@@ -1945,6 +1950,8 @@ function navegarFmTab(dir) {
 }
 
 function iniciarFormularioMensal() {
+    if (window._fmIniciado) return;
+    window._fmIniciado = true;
     // Monta tabela de efetivo por patente
     const tbody = document.getElementById('fm-efetivo-body');
     if (tbody) {
@@ -2385,16 +2392,16 @@ function preencherTabelaMat(mat) {
 function preencherTabelaPC(pc) {
     const tbody = document.getElementById('fm-pc-body');
     if (!tbody) return;
-    while (tbody.children.length < pc.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
-        tbody.appendChild(tr);
-    }
+    while (tbody.children.length < pc.length) adicionarLinhaPC();
     pc.forEach((row, i) => {
         const tr = tbody.children[i];
         if (!tr) return;
+        const nome   = tr.querySelector('textarea.fm-pc-nome');
         const inputs = tr.querySelectorAll('input');
-        [0,1,2,3].forEach(j => { if (inputs[j]) inputs[j].value = row[j]||''; });
+        if (nome)     nome.value     = row[0]||'';
+        if (inputs[0]) inputs[0].value = row[1]||'';
+        if (inputs[1]) inputs[1].value = row[2]||'';
+        if (inputs[2]) inputs[2].value = row[3]||'';
     });
 }
 
@@ -2566,6 +2573,11 @@ async function carregarDadosDoPainel() {
             ['chartEfetivoTotal','chartOperacional','chartAdministrativo','chartAfastamentos']
                 .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
         } catch(e) {}
+        // Atualiza dashboards secundários se já tiverem sido abertos
+        try { if (window._vtrPronto) { ['chartViaturas','chartEmbarcacoes'].forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} }); } } catch(e) {}
+        try { if (window._matPronto) { try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {} } } catch(e) {}
+        try { if (window._espPronto) { criarMiniGraficos(); } } catch(e) {}
+        try { if (window._aaPronto)  { window._aaPronto = false; iniciarAreaAtuacao(); } } catch(e) {}
     }
 
     if (elTs) elTs.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
@@ -2718,13 +2730,16 @@ function atualizarAbaUnidade(idx, r) {
     try {
         if (r.Viaturas) {
             const vtrs = JSON.parse(r.Viaturas);
-            const tabela = document.querySelector(`#u${uid}-c3 .tabela-veiculo:nth-child(2) tbody,
-                                                    #u${uid}-c3 table:first-of-type tbody`);
+            const tabela = document.querySelector(`#u${uid}-c3 table:first-of-type tbody`);
             if (tabela) {
-                tabela.innerHTML = vtrs.map(v =>
-                    `<tr><td class="col-tipo">${v[0]}<span class="prefixo-tag">${v[1]||''}</span></td>
-                     <td class="col-condicao"><span class="badge-condicao badge-${(v[2]||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}">${v[2]||'—'}</span></td></tr>`
-                ).join('') || '<tr><td colspan="2"><em>Nenhuma viatura cadastrada</em></td></tr>';
+                tabela.innerHTML = vtrs.map(v => {
+                    const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                    return `<tr>
+                        <td class="col-tipo">${v[0]||'—'}</td>
+                        <td class="col-tipo" style="width:20%;font-weight:700">${v[1]||'—'}</td>
+                        <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="3"><em>Nenhuma viatura cadastrada</em></td></tr>';
             }
         }
     } catch(e) {}
@@ -2738,10 +2753,14 @@ function atualizarAbaUnidade(idx, r) {
             if (tabela) {
                 const tbody = tabela.querySelector('tbody');
                 if (tbody) {
-                    tbody.innerHTML = embs.map(v =>
-                        `<tr><td class="col-tipo">${v[0]}<span class="prefixo-tag">${v[1]||''}</span></td>
-                         <td class="col-condicao"><span class="badge-condicao badge-${(v[2]||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}">${v[2]||'—'}</span></td></tr>`
-                    ).join('') || '<tr><td colspan="2"><em>Nenhuma embarcação cadastrada</em></td></tr>';
+                    tbody.innerHTML = embs.map(v => {
+                        const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                        return `<tr>
+                            <td class="col-tipo">${v[0]||'—'}</td>
+                            <td class="col-tipo" style="width:20%;font-weight:700">${v[1]||'—'}</td>
+                            <td class="col-condicao"><span class="badge-condicao badge-${cond}">${v[2]||'—'}</span></td>
+                        </tr>`;
+                    }).join('') || '<tr><td colspan="3"><em>Nenhuma embarcação cadastrada</em></td></tr>';
                 }
             }
         }
