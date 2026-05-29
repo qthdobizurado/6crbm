@@ -345,6 +345,7 @@
         .fm-btn-nav:hover:not(:disabled){background:var(--cinza-esc);transform:translateY(-1px)}
         .fm-btn-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
         .fm-pc-sel{background:#bbdefb!important;outline:2px solid #1e5fa5!important;outline-offset:-1px}
+        .fm-aa-sel{background:#fff9c4!important;outline:2px solid #f9a825!important;outline-offset:-1px}
         .fm-vtr-sel{background:#c8e6c9!important;outline:2px solid #2e7d32!important;outline-offset:-1px}
         tr.fm-vtr-linha-sel td{background:#e8f5e9!important;outline:none}
         tr.fm-vtr-linha-sel td:first-child{border-left:3px solid #2e7d32!important}
@@ -2279,6 +2280,150 @@ function iniciarFormularioMensal() {
 
     _vtrCriarSistema('fm-vtr-body');
     _vtrCriarSistema('fm-emb-body');
+
+    // ── Seleção múltipla de células — Área de Atuação ────────────────────
+    // Igual ao Plano de Chamada: clique/arrastar/Shift seleciona, Delete apaga,
+    // colar múltiplas linhas distribui pelas linhas abaixo.
+    (function() {
+        const getBody = () => document.getElementById('fm-aa-body');
+        let selInicio = null, selFim = null, arrastando = false;
+
+        // Elemento invisível para segurar foco após arrastar
+        const focusTrap = document.createElement('div');
+        focusTrap.tabIndex = -1;
+        focusTrap.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:0;height:0;';
+        document.body.appendChild(focusTrap);
+
+        function celulasDe(r1, c1, r2, c2) {
+            const tbody = getBody(); if (!tbody) return [];
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
+            const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
+            const els = [];
+            for (let r = rMin; r <= rMax; r++) {
+                const cells = rows[r]?.querySelectorAll('input') || [];
+                for (let c = cMin; c <= cMax; c++) { if (cells[c]) els.push(cells[c]); }
+            }
+            return els;
+        }
+
+        function limparDestaque() {
+            getBody()?.querySelectorAll('.fm-aa-sel').forEach(el => el.classList.remove('fm-aa-sel'));
+        }
+
+        function destacar() {
+            limparDestaque();
+            if (selInicio === null || selFim === null) return;
+            celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c)
+                .forEach(el => el.classList.add('fm-aa-sel'));
+        }
+
+        function posicao(el) {
+            const tbody = getBody(); if (!tbody) return null;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            for (let r = 0; r < rows.length; r++) {
+                const cells = Array.from(rows[r].querySelectorAll('input'));
+                const c = cells.indexOf(el);
+                if (c !== -1) return {r, c};
+            }
+            return null;
+        }
+
+        // mousedown
+        getBody()?.addEventListener('mousedown', function(e) {
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            if (e.shiftKey && selInicio !== null) {
+                e.preventDefault();
+                selFim = pos; destacar();
+                focusTrap.focus();
+            } else {
+                selInicio = pos; selFim = pos; arrastando = true; destacar();
+            }
+        });
+
+        // mousemove
+        getBody()?.addEventListener('mousemove', function(e) {
+            if (!arrastando || selInicio === null) return;
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            if (selFim && pos.r === selFim.r && pos.c === selFim.c) return;
+            e.preventDefault(); selFim = pos; destacar();
+            if (document.activeElement && getBody()?.contains(document.activeElement))
+                document.activeElement.blur();
+        });
+
+        // mouseup
+        document.addEventListener('mouseup', function() {
+            if (arrastando) {
+                arrastando = false;
+                const cells = selInicio !== null && selFim !== null
+                    ? celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c) : [];
+                if (cells.length > 1) focusTrap.focus();
+            }
+        });
+
+        // focusin — não reseta se há seleção múltipla ativa
+        getBody()?.addEventListener('focusin', function(e) {
+            if (arrastando) return;
+            const el = e.target.closest('input');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            const cells = selInicio !== null && selFim !== null
+                ? celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c) : [];
+            if (cells.length > 1) return;
+            selInicio = pos; selFim = pos; destacar();
+        });
+
+        // Delete / Backspace — fase de captura
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            if (selInicio === null || selFim === null) return;
+            const cells = celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c);
+            if (cells.length <= 1) return;
+            const af = document.activeElement;
+            if (af !== focusTrap && !getBody()?.contains(af)) return;
+            e.preventDefault(); e.stopPropagation();
+            cells.forEach(el => { el.value = ''; });
+            calcularTotaisFormAA();
+            focusTrap.focus();
+        }, true);
+
+        // Paste inteligente — distribui linhas coladas na coluna onde o paste ocorreu
+        getBody()?.addEventListener('paste', function(e) {
+            const target = e.target;
+            const tbody  = getBody();
+            const rows   = Array.from(tbody.querySelectorAll('tr'));
+            const rowIdx = rows.findIndex(tr => tr.contains(target));
+            if (rowIdx === -1) return;
+            const inputs = Array.from(rows[rowIdx].querySelectorAll('input'));
+            const colIdx = inputs.findIndex(el => el === target);
+            if (colIdx === -1) return;
+            const texto  = (e.clipboardData || window.clipboardData).getData('text');
+            const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+            if (linhas.length <= 1) return;
+            e.preventDefault();
+            linhas.forEach((val, i) => {
+                if (rowIdx + i >= tbody.querySelectorAll('tr').length) adicionarLinhaAA();
+                const tr = tbody.querySelectorAll('tr')[rowIdx + i];
+                const el = tr.querySelectorAll('input')[colIdx];
+                if (el) el.value = val;
+            });
+            calcularTotaisFormAA();
+        });
+
+        // Clicar fora limpa seleção
+        document.addEventListener('mousedown', function(e) {
+            if (getBody() && !getBody().contains(e.target) && e.target !== focusTrap) {
+                limparDestaque(); selInicio = null; selFim = null;
+            }
+        });
+    })();
 }
 
 function calcularTotaisEfetivo() {
