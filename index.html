@@ -346,6 +346,13 @@
         .fm-btn-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
         .fm-pc-sel{background:#bbdefb!important;outline:2px solid #1e5fa5!important;outline-offset:-1px}
         .fm-vtr-sel{background:#c8e6c9!important;outline:2px solid #2e7d32!important;outline-offset:-1px}
+        tr.fm-vtr-linha-sel td{background:#e8f5e9!important;outline:none}
+        tr.fm-vtr-linha-sel td:first-child{border-left:3px solid #2e7d32!important}
+        /* Célula combinada Tipo · Prefixo */
+        .fm-vtr-celula-comb{display:flex;align-items:center;gap:0;width:100%}
+        .fm-vtr-celula-comb .fm-vtr-tipo{flex:2;min-width:0;border-right:1px solid #ddd}
+        .fm-vtr-celula-comb .fm-vtr-prefixo{flex:1;min-width:80px;max-width:130px;font-weight:700;font-family:monospace;font-size:.82rem}
+        .fm-vtr-sep{color:#bbb;font-size:1rem;padding:0 4px;user-select:none;flex-shrink:0}
 
         /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
         .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
@@ -835,21 +842,20 @@
 
                     <!-- ABA 3: VIATURAS E EMBARCAÇÕES -->
                     <div class="fm-tab-conteudo" id="fm-tab-3">
-                        <p class="fm-tab-desc">Informe o tipo, prefixo e condição de cada viatura e embarcação.</p>
+                        <p class="fm-tab-desc">Informe o tipo/prefixo e condição de cada viatura e embarcação.</p>
                         <h6 class="fm-subtitulo">🚒 Viaturas</h6>
                         <div style="overflow-x:auto">
                         <table class="fm-tabela" id="fm-tabela-vtr">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE VIATURA</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
+                                    <th style="text-align:left;min-width:320px">TIPO DE VIATURA / PREFIXO · ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-vtr-body">
-                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: ABT — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: ABT — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Ex: ABT-12"></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -860,14 +866,13 @@
                         <table class="fm-tabela" id="fm-tabela-emb">
                             <thead>
                                 <tr class="fm-cabecalho">
-                                    <th style="text-align:left;min-width:200px">TIPO DE EMBARCAÇÃO</th>
-                                    <th style="min-width:120px">PREFIXO / ID</th>
+                                    <th style="text-align:left;min-width:320px">TIPO DE EMBARCAÇÃO / PREFIXO · ID</th>
                                     <th style="min-width:150px">CONDIÇÃO</th>
                                 </tr>
                             </thead>
                             <tbody id="fm-emb-body">
-                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: Lancha de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: Lancha de Resgate" style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -2153,104 +2158,93 @@ function iniciarFormularioMensal() {
         }
     });
 
-    // ── Seleção múltipla de células — Viaturas e Embarcações ─────────────
-    // Mesmo comportamento do Plano de Chamada, mas em verde (fm-vtr-sel)
-    // Funciona em ambas as tabelas (fm-vtr-body e fm-emb-body)
+    // ── Seleção múltipla de linhas — Viaturas e Embarcações ──────────────
+    // Com a célula combinada Tipo·Prefixo, a seleção opera por LINHA inteira.
+    // Clique = seleciona linha. Shift+Clique / arrastar = expande seleção.
+    // Delete com linhas selecionadas = limpa todos os campos daquelas linhas.
     function _vtrCriarSistema(tbodyId) {
         const getBody = () => document.getElementById(tbodyId);
         let selInicio = null, selFim = null, arrastando = false;
 
-        function celulasDe(r1, c1, r2, c2) {
+        function linhasDe(r1, r2) {
             const tbody = getBody(); if (!tbody) return [];
             const rows = Array.from(tbody.querySelectorAll('tr'));
-            const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
-            const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
-            const els = [];
-            for (let r = rMin; r <= rMax; r++) {
-                const cells = rows[r]?.querySelectorAll('input,textarea') || [];
-                for (let c = cMin; c <= cMax; c++) { if (cells[c]) els.push(cells[c]); }
-            }
-            return els;
+            const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
+            return rows.slice(rMin, rMax + 1);
         }
 
         function limparDestaque() {
-            getBody()?.querySelectorAll('.fm-vtr-sel').forEach(el => el.classList.remove('fm-vtr-sel'));
+            getBody()?.querySelectorAll('tr.fm-vtr-linha-sel').forEach(tr => tr.classList.remove('fm-vtr-linha-sel'));
         }
 
         function destacar() {
             limparDestaque();
-            if (!selInicio || !selFim) return;
-            celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c)
-                .forEach(el => el.classList.add('fm-vtr-sel'));
+            if (selInicio === null || selFim === null) return;
+            linhasDe(selInicio, selFim).forEach(tr => tr.classList.add('fm-vtr-linha-sel'));
         }
 
-        function posicao(el) {
-            const tbody = getBody(); if (!tbody) return null;
+        function idxLinha(el) {
+            const tbody = getBody(); if (!tbody) return -1;
             const rows = Array.from(tbody.querySelectorAll('tr'));
-            for (let r = 0; r < rows.length; r++) {
-                const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
-                const c = cells.indexOf(el);
-                if (c !== -1) return {r, c};
-            }
-            return null;
+            return rows.findIndex(tr => tr === el || tr.contains(el));
         }
 
-        // mousedown
+        // mousedown — clique em qualquer parte da linha
         getBody()?.addEventListener('mousedown', function(e) {
-            const el = e.target.closest('input,textarea');
-            if (!el) return;
-            const pos = posicao(el);
-            if (!pos) return;
-            if (e.shiftKey && selInicio) {
+            const tr = e.target.closest('tr');
+            if (!tr || !getBody()?.contains(tr)) return;
+            const idx = idxLinha(tr);
+            if (idx === -1) return;
+            if (e.shiftKey && selInicio !== null) {
                 e.preventDefault();
-                selFim = pos; destacar(); el.blur();
+                selFim = idx; destacar();
             } else {
-                selInicio = pos; selFim = pos; arrastando = true; destacar();
+                selInicio = idx; selFim = idx; arrastando = true; destacar();
             }
         });
 
-        // mousemove
+        // mousemove — arrastar expande seleção
         getBody()?.addEventListener('mousemove', function(e) {
-            if (!arrastando || !selInicio) return;
-            const el = e.target.closest('input,textarea');
-            if (!el) return;
-            const pos = posicao(el);
-            if (!pos) return;
-            if (selFim && pos.r === selFim.r && pos.c === selFim.c) return;
-            e.preventDefault(); selFim = pos; destacar();
-            if (document.activeElement && getBody()?.contains(document.activeElement)) document.activeElement.blur();
+            if (!arrastando || selInicio === null) return;
+            const tr = e.target.closest('tr');
+            if (!tr || !getBody()?.contains(tr)) return;
+            const idx = idxLinha(tr);
+            if (idx === -1 || idx === selFim) return;
+            e.preventDefault(); selFim = idx; destacar();
         });
 
-        // mouseup global
         document.addEventListener('mouseup', function() { arrastando = false; });
 
-        // focusin
-        getBody()?.addEventListener('focusin', function(e) {
-            if (arrastando) return;
-            const el = e.target.closest('input,textarea');
-            if (!el) return;
-            const pos = posicao(el);
-            if (!pos) return;
-            selInicio = pos; selFim = pos; destacar();
-        });
-
-        // Delete / Backspace
+        // Delete / Backspace — limpa campos das linhas selecionadas
         getBody()?.addEventListener('keydown', function(e) {
             if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-            if (!selInicio || !selFim) return;
-            const cells = celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c);
-            if (cells.length > 1) { e.preventDefault(); cells.forEach(el => { el.value = ''; }); }
+            if (selInicio === null || selFim === null) return;
+            const sels = linhasDe(selInicio, selFim);
+            if (sels.length < 1) return;
+            // Só apaga se há mais de 1 linha selecionada,
+            // ou se o foco não está em nenhum campo (para não interferir com edição normal)
+            const focused = document.activeElement;
+            const focoNaSel = sels.some(tr => tr.contains(focused));
+            if (sels.length > 1 || !focoNaSel) {
+                e.preventDefault();
+                sels.forEach(tr => {
+                    tr.querySelectorAll('input, textarea').forEach(el => { el.value = ''; });
+                    const sel = tr.querySelector('select');
+                    if (sel) sel.value = 'Operacional';
+                });
+            }
         });
 
-        // Paste inteligente — distribui linhas coladas
+        // Paste inteligente — distribui linhas coladas pelo campo onde o paste ocorreu
         getBody()?.addEventListener('paste', function(e) {
             const target = e.target;
             const tbody  = getBody();
             const rows   = Array.from(tbody.querySelectorAll('tr'));
             const rowIdx = rows.findIndex(tr => tr.contains(target));
             if (rowIdx === -1) return;
-            const cells  = Array.from(rows[rowIdx].querySelectorAll('input,textarea'));
-            const colIdx = cells.findIndex(el => el === target);
+            // Descobre em qual input/textarea dentro da linha o paste foi feito
+            const inputs = Array.from(rows[rowIdx].querySelectorAll('input,textarea'));
+            const colIdx = inputs.findIndex(el => el === target);
             if (colIdx === -1) return;
             const texto  = (e.clipboardData || window.clipboardData).getData('text');
             const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
@@ -2314,14 +2308,14 @@ function calcularTotaisFormAA() {
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
 function adicionarLinhaEmb() {
     const tbody = document.getElementById('fm-emb-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><div class="fm-vtr-celula-comb"><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea><span class="fm-vtr-sep">·</span><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></div></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
