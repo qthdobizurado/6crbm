@@ -340,6 +340,7 @@
         .fm-btn-nav:hover:not(:disabled){background:var(--cinza-esc);transform:translateY(-1px)}
         .fm-btn-nav:disabled{opacity:.4;cursor:not-allowed;transform:none}
         .fm-pc-sel{background:#bbdefb!important;outline:2px solid #1e5fa5!important;outline-offset:-1px}
+        .fm-vtr-sel{background:#c8e6c9!important;outline:2px solid #2e7d32!important;outline-offset:-1px}
 
         /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
         .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
@@ -841,9 +842,9 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-vtr-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT — Auto Bomba Tanque"></td><td><input type="text" class="fm-input-cell" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: ABT — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Ex: ABT-12"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -860,8 +861,8 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-emb-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Ex: Lancha de Resgate"></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Ex: Lancha de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -2144,6 +2145,129 @@ function iniciarFormularioMensal() {
             _pcSelFim    = null;
         }
     });
+
+    // ── Seleção múltipla de células — Viaturas e Embarcações ─────────────
+    // Mesmo comportamento do Plano de Chamada, mas em verde (fm-vtr-sel)
+    // Funciona em ambas as tabelas (fm-vtr-body e fm-emb-body)
+    function _vtrCriarSistema(tbodyId) {
+        const getBody = () => document.getElementById(tbodyId);
+        let selInicio = null, selFim = null, arrastando = false;
+
+        function celulasDe(r1, c1, r2, c2) {
+            const tbody = getBody(); if (!tbody) return [];
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const rMin = Math.min(r1,r2), rMax = Math.max(r1,r2);
+            const cMin = Math.min(c1,c2), cMax = Math.max(c1,c2);
+            const els = [];
+            for (let r = rMin; r <= rMax; r++) {
+                const cells = rows[r]?.querySelectorAll('input,textarea') || [];
+                for (let c = cMin; c <= cMax; c++) { if (cells[c]) els.push(cells[c]); }
+            }
+            return els;
+        }
+
+        function limparDestaque() {
+            getBody()?.querySelectorAll('.fm-vtr-sel').forEach(el => el.classList.remove('fm-vtr-sel'));
+        }
+
+        function destacar() {
+            limparDestaque();
+            if (!selInicio || !selFim) return;
+            celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c)
+                .forEach(el => el.classList.add('fm-vtr-sel'));
+        }
+
+        function posicao(el) {
+            const tbody = getBody(); if (!tbody) return null;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            for (let r = 0; r < rows.length; r++) {
+                const cells = Array.from(rows[r].querySelectorAll('input,textarea'));
+                const c = cells.indexOf(el);
+                if (c !== -1) return {r, c};
+            }
+            return null;
+        }
+
+        // mousedown
+        getBody()?.addEventListener('mousedown', function(e) {
+            const el = e.target.closest('input,textarea');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            if (e.shiftKey && selInicio) {
+                e.preventDefault();
+                selFim = pos; destacar(); el.blur();
+            } else {
+                selInicio = pos; selFim = pos; arrastando = true; destacar();
+            }
+        });
+
+        // mousemove
+        getBody()?.addEventListener('mousemove', function(e) {
+            if (!arrastando || !selInicio) return;
+            const el = e.target.closest('input,textarea');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            if (selFim && pos.r === selFim.r && pos.c === selFim.c) return;
+            e.preventDefault(); selFim = pos; destacar();
+            if (document.activeElement && getBody()?.contains(document.activeElement)) document.activeElement.blur();
+        });
+
+        // mouseup global
+        document.addEventListener('mouseup', function() { arrastando = false; });
+
+        // focusin
+        getBody()?.addEventListener('focusin', function(e) {
+            if (arrastando) return;
+            const el = e.target.closest('input,textarea');
+            if (!el) return;
+            const pos = posicao(el);
+            if (!pos) return;
+            selInicio = pos; selFim = pos; destacar();
+        });
+
+        // Delete / Backspace
+        getBody()?.addEventListener('keydown', function(e) {
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            if (!selInicio || !selFim) return;
+            const cells = celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c);
+            if (cells.length > 1) { e.preventDefault(); cells.forEach(el => { el.value = ''; }); }
+        });
+
+        // Paste inteligente — distribui linhas coladas
+        getBody()?.addEventListener('paste', function(e) {
+            const target = e.target;
+            const tbody  = getBody();
+            const rows   = Array.from(tbody.querySelectorAll('tr'));
+            const rowIdx = rows.findIndex(tr => tr.contains(target));
+            if (rowIdx === -1) return;
+            const cells  = Array.from(rows[rowIdx].querySelectorAll('input,textarea'));
+            const colIdx = cells.findIndex(el => el === target);
+            if (colIdx === -1) return;
+            const texto  = (e.clipboardData || window.clipboardData).getData('text');
+            const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+            if (linhas.length <= 1) return;
+            e.preventDefault();
+            const addFn = tbodyId === 'fm-vtr-body' ? adicionarLinhaVtr : adicionarLinhaEmb;
+            linhas.forEach((val, i) => {
+                if (rowIdx + i >= tbody.querySelectorAll('tr').length) addFn();
+                const tr = tbody.querySelectorAll('tr')[rowIdx + i];
+                const el = tr.querySelectorAll('input,textarea')[colIdx];
+                if (el) el.value = val;
+            });
+        });
+
+        // Clicar fora limpa seleção
+        document.addEventListener('mousedown', function(e) {
+            if (getBody() && !getBody().contains(e.target)) {
+                limparDestaque(); selInicio = null; selFim = null;
+            }
+        });
+    }
+
+    _vtrCriarSistema('fm-vtr-body');
+    _vtrCriarSistema('fm-emb-body');
 }
 
 function calcularTotaisEfetivo() {
@@ -2183,14 +2307,14 @@ function calcularTotaisFormAA() {
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
 function adicionarLinhaEmb() {
     const tbody = document.getElementById('fm-emb-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Tipo..."></td><td><input type="text" class="fm-input-cell" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-tipo" rows="1" placeholder="Tipo..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell fm-vtr-prefixo" placeholder="Prefixo..."></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
     tbody.appendChild(tr);
 }
 
@@ -2234,19 +2358,18 @@ function preencherTabelaVeiculos(tbodyId, rows) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     // Garante linhas suficientes
-    while (tbody.children.length < rows.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
-        tbody.appendChild(tr);
-    }
+    const addFn = tbodyId === 'fm-vtr-body' ? adicionarLinhaVtr : adicionarLinhaEmb;
+    while (tbody.children.length < rows.length) addFn();
     rows.forEach((row, i) => {
         const tr = tbody.children[i];
         if (!tr) return;
-        const inputs = tr.querySelectorAll('input');
+        // col 0 = textarea (tipo), col 1 = input (prefixo), col 2 = select (condição)
+        const tipo   = tr.querySelector('textarea.fm-vtr-tipo');
+        const pref   = tr.querySelector('input.fm-vtr-prefixo');
         const sel    = tr.querySelector('select');
-        if (inputs[0]) inputs[0].value = row[0]||'';
-        if (inputs[1]) inputs[1].value = row[1]||'';
-        if (sel)       sel.value       = row[2]||'Operacional';
+        if (tipo) tipo.value = row[0]||'';
+        if (pref) pref.value = row[1]||'';
+        if (sel)  sel.value  = row[2]||'Operacional';
     });
 }
 
@@ -2315,16 +2438,18 @@ function coletarPayloadMensal(u, uid) {
 
     // Viaturas
     const viaturas = Array.from(document.querySelectorAll('#fm-vtr-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const sel    = tr.querySelector('select');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', sel?.value||'Operacional'];
+        const tipo = tr.querySelector('textarea.fm-vtr-tipo');
+        const pref = tr.querySelector('input.fm-vtr-prefixo');
+        const sel  = tr.querySelector('select');
+        return [tipo?.value||'', pref?.value||'', sel?.value||'Operacional'];
     }).filter(r => r[0]);
 
     // Embarcações
     const embarcacoes = Array.from(document.querySelectorAll('#fm-emb-body tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const sel    = tr.querySelector('select');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', sel?.value||'Operacional'];
+        const tipo = tr.querySelector('textarea.fm-vtr-tipo');
+        const pref = tr.querySelector('input.fm-vtr-prefixo');
+        const sel  = tr.querySelector('select');
+        return [tipo?.value||'', pref?.value||'', sel?.value||'Operacional'];
     }).filter(r => r[0]);
 
     // Materiais
@@ -2335,8 +2460,9 @@ function coletarPayloadMensal(u, uid) {
 
     // Plano de Chamada
     const planoChamada = Array.from(document.querySelectorAll('#fm-pc-body tr')).map(tr => {
+        const nome = tr.querySelector('textarea.fm-pc-nome');
         const inputs = tr.querySelectorAll('input');
-        return [inputs[0]?.value||'', inputs[1]?.value||'', inputs[2]?.value||'', inputs[3]?.value||''];
+        return [nome?.value||'', inputs[0]?.value||'', inputs[1]?.value||'', inputs[2]?.value||''];
     }).filter(r => r[0]);
 
     // Área de Atuação
