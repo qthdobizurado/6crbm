@@ -2621,8 +2621,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cells=Array.from(rows[rowIdx].querySelectorAll('input,textarea'));
         const colIdx=cells.findIndex(el=>el===target); if(colIdx===-1) return;
         const texto=(e.clipboardData||window.clipboardData).getData('text');
-        const linhas=texto.split(/?
-/).map(l=>l.trim()).filter(l=>l);
+        const linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l);
         if(linhas.length<=1) return;
         e.preventDefault();
         linhas.forEach((val,i)=>{
@@ -2694,8 +2693,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const cells=Array.from(rows[rowIdx].querySelectorAll('input'));
             const colIdx=cells.findIndex(el=>el===target); if(colIdx===-1) return;
             const texto=(e.clipboardData||window.clipboardData).getData('text');
-            const linhas=texto.split(/?
-/).map(l=>l.trim()).filter(l=>l);
+            const linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l);
             if(linhas.length<=1) return;
             e.preventDefault();
             linhas.forEach((val,i)=>{
