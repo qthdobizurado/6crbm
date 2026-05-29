@@ -2405,47 +2405,41 @@ async function carregarDadosDoPainel() {
     const url = (typeof SCRIPT_URL !== 'undefined') ? SCRIPT_URL : '';
     if (!url || url === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
 
-    try {
-        // Timeout de 10s para não travar o site se o script demorar
-        const fetchComTimeout = (u) => {
-            const ctrl = new AbortController();
-            setTimeout(() => ctrl.abort(), 10000);
-            return fetch(u, { signal: ctrl.signal }).then(r => r.json());
-        };
+    // Atualiza timestamp independente de ter dados
+    const elTs = document.getElementById('quadro-data-hora');
 
-        // Carrega diários e mensais em paralelo
-        const [resDiario, resMensal] = await Promise.all([
-            fetchComTimeout(`${url}?tipo=diario`),
-            fetchComTimeout(`${url}?tipo=mensal`)
-        ]);
-
-        if (resDiario.sucesso && resDiario.registros?.length) {
-            aplicarDadosDiarios(resDiario.registros);
-        }
-        if (resMensal.sucesso && resMensal.registros?.length) {
-            aplicarDadosMensais(resMensal.registros);
-        }
-
-        // Atualiza todos os painéis
-        calcularTotais();
-        // Recria os gráficos com novos dados
+    const fetchSeguro = async (u) => {
         try {
-            document.getElementById('chartEfetivoTotal') &&
-            document.getElementById('chartEfetivoTotal').getContext &&
-            Chart.getChart('chartEfetivoTotal')?.update();
-            Chart.getChart('chartOperacional')?.update();
-            Chart.getChart('chartAdministrativo')?.update();
-            Chart.getChart('chartAfastamentos')?.update();
-        } catch(e) {}
-        renderQuadroDiario();
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 8000);
+            const res = await fetch(u, { signal: ctrl.signal });
+            clearTimeout(timer);
+            const json = await res.json();
+            return json;
+        } catch(e) {
+            return null; // falha silenciosa — não trava nada
+        }
+    };
 
-        // Atualiza timestamp
-        const el = document.getElementById('quadro-data-hora');
-        if (el) el.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
-
-    } catch(e) {
-        console.warn('Erro ao carregar dados do painel:', e.message);
+    // Diário
+    const resDiario = await fetchSeguro(`${url}?tipo=diario`);
+    if (resDiario?.sucesso && resDiario.registros?.length) {
+        try { aplicarDadosDiarios(resDiario.registros); } catch(e) {}
+        try { renderQuadroDiario(); } catch(e) {}
     }
+
+    // Mensal
+    const resMensal = await fetchSeguro(`${url}?tipo=mensal`);
+    if (resMensal?.sucesso && resMensal.registros?.length) {
+        try { aplicarDadosMensais(resMensal.registros); } catch(e) {}
+        try { calcularTotais(); } catch(e) {}
+        try {
+            ['chartEfetivoTotal','chartOperacional','chartAdministrativo','chartAfastamentos']
+                .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
+        } catch(e) {}
+    }
+
+    if (elTs) elTs.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
 }
 
 function aplicarDadosDiarios(registros) {
@@ -2684,10 +2678,15 @@ document.addEventListener('DOMContentLoaded', function() {
     gerarLinksUI();
     verificarURLParams();
 
-    // Carrega dados reais da planilha após o UI estar pronto (não bloqueia abertura)
-    setTimeout(carregarDadosDoPainel, 800);
-    // Atualiza automaticamente a cada 5 minutos
-    setInterval(carregarDadosDoPainel, 5 * 60 * 1000);
+    // Carrega dados reais da planilha após o UI estar pronto
+    // Usando setTimeout garante que o site abre normalmente primeiro
+    setTimeout(() => {
+        carregarDadosDoPainel().catch(() => {});
+    }, 1500);
+    // Atualiza a cada 5 minutos
+    setInterval(() => {
+        carregarDadosDoPainel().catch(() => {});
+    }, 5 * 60 * 1000);
 });
 </script>
 </body>
