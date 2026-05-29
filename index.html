@@ -240,9 +240,9 @@
         .tabela-veiculo .col-condicao{width:40%;text-align:left;font-style:italic;padding-left:10px;background:#f8f9fa}
         .prefixo-tag{display:inline-block;background:#343a40;color:#fff;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:4px;margin-left:8px;letter-spacing:.5px;vertical-align:middle}
         .badge-condicao{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700;font-style:normal}
-        .badge-operacional{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .badge-em-condicoes{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
         .badge-manutencao{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
-        .badge-inoperante{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+        .badge-baixada{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
         .tabela-materiais{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:15px 0}
         .tabela-materiais th,.tabela-materiais td{border:2px solid #000;padding:6px 8px;text-align:center;vertical-align:middle}
         .tabela-materiais .cabecalho{background:var(--amarelo);color:#000;font-weight:700;text-transform:uppercase;font-size:.75rem}
@@ -275,7 +275,7 @@
             .vtr-grid,.mat-grid{grid-template-columns:1fr}
         }
         @media(max-width:480px){
-            .mini-graficos-grid{grid-template-columns:repeat(2,1fr)}
+            .mini-graficos-grid{grid-template-columns:repeat(2,minmax(180px,1fr));min-width:360px}
         }
 
         /* ===== LINKS E FORMULÁRIOS ===== */
@@ -563,7 +563,9 @@
                             <span style="font-size:.75rem;font-weight:400;opacity:.75;text-transform:none">Cada card = 1 curso</span>
                         </div>
                         <div class="mini-graficos-legenda" id="miniLegenda"></div>
+                        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
                         <div class="mini-graficos-grid" id="miniGraficosGrid"></div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -583,9 +585,9 @@
                             <div class="vtr-card-body">
                                 <div class="vtr-chart-container"><canvas id="chartViaturas"></canvas></div>
                                 <div class="legend-custom">
-                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Operacional</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Em condições</div>
                                     <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Inoperante</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixada</div>
                                 </div>
                                 <div class="status-grid" id="vtrStatusBadges"></div>
                             </div>
@@ -595,9 +597,9 @@
                             <div class="vtr-card-body">
                                 <div class="vtr-chart-container"><canvas id="chartEmbarcacoes"></canvas></div>
                                 <div class="legend-custom">
-                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Operacional</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#28a745"></div>Em condições</div>
                                     <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div>Manutenção</div>
-                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Inoperante</div>
+                                    <div class="legend-item"><div class="legend-color" style="background:#dc3545"></div>Baixada</div>
                                 </div>
                                 <div class="status-grid" id="embStatusBadges"></div>
                             </div>
@@ -849,9 +851,9 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-vtr-body">
-                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: ABT-12 — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: UR-205 — Unidade de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: ABT-12 — Auto Bomba Tanque" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: UR-205 — Unidade de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -867,8 +869,8 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-emb-body">
-                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: LCH-01 — Lancha de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
-                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Ex: LCH-01 — Lancha de Resgate" style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td></tr>
+                                <tr><td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td></tr>
                             </tbody>
                         </table>
                         </div>
@@ -1119,14 +1121,14 @@ function iniciarViaturas() {
 
     // Status badges
     document.getElementById('vtrStatusBadges').innerHTML = `
-        <div class="status-badge sb-operacional"><span class="sb-num">${vtrOp}</span><span class="sb-label">Operacional</span></div>
+        <div class="status-badge sb-operacional"><span class="sb-num">${vtrOp}</span><span class="sb-label">Em condições</span></div>
         <div class="status-badge sb-manutencao"><span class="sb-num">${vtrMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${vtrIn}</span><span class="sb-label">Inoperante</span></div>
+        <div class="status-badge sb-inoperante"><span class="sb-num">${vtrIn}</span><span class="sb-label">Baixada</span></div>
     `;
     document.getElementById('embStatusBadges').innerHTML = `
-        <div class="status-badge sb-operacional"><span class="sb-num">${embOp}</span><span class="sb-label">Operacional</span></div>
+        <div class="status-badge sb-operacional"><span class="sb-num">${embOp}</span><span class="sb-label">Em condições</span></div>
         <div class="status-badge sb-manutencao"><span class="sb-num">${embMt}</span><span class="sb-label">Manutenção</span></div>
-        <div class="status-badge sb-inoperante"><span class="sb-num">${embIn}</span><span class="sb-label">Inoperante</span></div>
+        <div class="status-badge sb-inoperante"><span class="sb-num">${embIn}</span><span class="sb-label">Baixada</span></div>
     `;
 
     const labelsVtr = nomesUnidades;
@@ -1151,9 +1153,9 @@ function iniciarViaturas() {
     new Chart(document.getElementById('chartViaturas').getContext('2d'), {
         type:'bar',
         data:{labels:labelsVtr, datasets:[
-            {label:'Operacional',data:opVtr,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
+            {label:'Em condições',data:opVtr,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
             {label:'Manutenção', data:mtVtr,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Inoperante', data:inVtr,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
+            {label:'Baixada',        data:inVtr,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
         ]},
         options:opcoesVtr
     });
@@ -1161,9 +1163,9 @@ function iniciarViaturas() {
     new Chart(document.getElementById('chartEmbarcacoes').getContext('2d'), {
         type:'bar',
         data:{labels:labelsVtr, datasets:[
-            {label:'Operacional',data:opEmb,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
+            {label:'Em condições',data:opEmb,backgroundColor:'rgba(40,167,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
             {label:'Manutenção', data:mtEmb,backgroundColor:'rgba(255,193,7,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8},
-            {label:'Inoperante', data:inEmb,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
+            {label:'Baixada',        data:inEmb,backgroundColor:'rgba(220,53,69,.85)',borderColor:'#000',borderWidth:2,barPercentage:0.7,categoryPercentage:0.8}
         ]},
         options:opcoesVtr
     });
@@ -1392,7 +1394,7 @@ function gerarComandoSubcomando() {
 
 function gerarTabelaEfetivo() {
     let rows = patentes.map(p => `<tr><td>${p}</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num total-linha">0</td></tr>`).join('');
-    return `<table class="tabela"><thead><tr class="cabecalho"><th>MILITARES</th><th>SERV. OPERACIONAL</th><th>SERV. ADMINISTRATIVO</th><th>AFASTAMENTO</th><th>TOTAL</th></tr></thead><tbody>${rows}<tr class="total-geral"><td><strong>TOTAL</strong></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table>`;
+    return `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela"><thead><tr class="cabecalho"><th>MILITARES</th><th>SERV. OPERACIONAL</th><th>SERV. ADMINISTRATIVO</th><th>AFASTAMENTO</th><th>TOTAL</th></tr></thead><tbody>${rows}<tr class="total-geral"><td><strong>TOTAL</strong></td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td></tr></tbody></table></div>`;
 }
 
 function gerarControleEfetivo(id) {
@@ -1402,7 +1404,7 @@ function gerarControleEfetivo(id) {
 function gerarEspecialistasUnidade(id) {
     const linhas = cursosEsp.map(c => `<tr><td class="col-curso"><span class="abrev-un">${c.abrev}</span>${c.nome}</td><td class="num">0</td><td style="text-align:left;padding-left:10px;font-style:italic;font-size:.8rem"><em>Aguardando...</em></td></tr>`).join('');
     return `<div class="controle-conteudo" id="u${id}-c2"><h4>Controle de Especialistas</h4>
-    <table class="tabela-especialistas"><thead><tr class="cabecalho"><th style="text-align:left;padding-left:10px">CURSOS OPERACIONAIS</th><th>QUANTIDADE</th><th style="text-align:left;padding-left:10px">NOMES DOS MILITARES</th></tr></thead><tbody>${linhas}</tbody></table>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-especialistas"><thead><tr class="cabecalho"><th style="text-align:left;padding-left:10px">CURSOS OPERACIONAIS</th><th>QUANTIDADE</th><th style="text-align:left;padding-left:10px">NOMES DOS MILITARES</th></tr></thead><tbody>${linhas}</tbody></table></div>
     <p style="margin-top:15px;font-size:.85rem;color:#6c757d">* Dados serão carregados via link de preenchimento</p></div>`;
 }
 
@@ -1418,7 +1420,7 @@ function gerarMateriais(id) {
 
 function gerarPlanoChamada(id) {
     const l = Array(8).fill('<tr><td class="col-nome"><em>Aguardando...</em></td><td class="col-telefone"><em>-</em></td><td class="col-cpf"><em>-</em></td><td class="col-cnh"><em>-</em></td></tr>').join('');
-    return `<div class="controle-conteudo" id="u${id}-c5"><h4>PLANO DE CHAMADA</h4><table class="tabela tabela-plano-chamada"><thead><tr class="cabecalho"><th>POSTO/GRADUAÇÃO, RG E NOME COMPLETO</th><th>TELEFONE</th><th>CPF</th><th>CATEGORIA CNH</th></tr></thead><tbody>${l}</tbody><tfoot><tr><td colspan="4" class="observacao"><strong>Observação:</strong> Dados carregados via link de preenchimento.</td></tr></tfoot></table></div>`;
+    return `<div class="controle-conteudo" id="u${id}-c5"><h4>PLANO DE CHAMADA</h4><div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela tabela-plano-chamada"><thead><tr class="cabecalho"><th>POSTO/GRADUAÇÃO, RG E NOME COMPLETO</th><th>TELEFONE</th><th>CPF</th><th>CATEGORIA CNH</th></tr></thead><tbody>${l}</tbody><tfoot><tr><td colspan="4" class="observacao"><strong>Observação:</strong> Dados carregados via link de preenchimento.</td></tr></tfoot></table></div></div>`;
 }
 
 function gerarAreaAtuacao(id) {
@@ -2290,7 +2292,7 @@ function iniciarFormularioMensal() {
                 sels.forEach(tr => {
                     tr.querySelectorAll('input, textarea').forEach(el => { el.value = ''; });
                     const sel = tr.querySelector('select');
-                    if (sel) sel.value = 'Operacional';
+                    if (sel) sel.value = 'Em condições';
                 });
             }
         });
@@ -2552,14 +2554,14 @@ function calcularTotaisFormAA() {
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td>';
     tbody.appendChild(tr);
 }
 
 function adicionarLinhaEmb() {
     const tbody = document.getElementById('fm-emb-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Operacional">✅ Operacional</option><option value="Manutenção">🔧 Manutenção</option><option value="Inoperante">❌ Inoperante</option></select></td>';
+    tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td>';
     tbody.appendChild(tr);
 }
 
@@ -2613,7 +2615,7 @@ function preencherTabelaVeiculos(tbodyId, rows) {
         // row[1] = prefixo (formato legado, vazio '' no novo formato)
         const prefixo = (row[1] || '').trim();
         if (ta)  ta.value  = prefixo ? `${row[0]} — ${prefixo}` : (row[0]||'');
-        if (sel) sel.value = row[2]||'Operacional';
+        if (sel) sel.value = row[2]||'Em condições';
     });
 }
 
@@ -2684,14 +2686,14 @@ function coletarPayloadMensal(u, uid) {
     const viaturas = Array.from(document.querySelectorAll('#fm-vtr-body tr')).map(tr => {
         const ta  = tr.querySelector('textarea.fm-vtr-unico');
         const sel = tr.querySelector('select');
-        return [ta?.value||'', '', sel?.value||'Operacional'];
+        return [ta?.value||'', '', sel?.value||'Em condições'];
     }).filter(r => r[0]);
 
     // Embarcações
     const embarcacoes = Array.from(document.querySelectorAll('#fm-emb-body tr')).map(tr => {
         const ta  = tr.querySelector('textarea.fm-vtr-unico');
         const sel = tr.querySelector('select');
-        return [ta?.value||'', '', sel?.value||'Operacional'];
+        return [ta?.value||'', '', sel?.value||'Em condições'];
     }).filter(r => r[0]);
 
     // Materiais
@@ -2714,12 +2716,12 @@ function coletarPayloadMensal(u, uid) {
     }).filter(r => r[0]);
 
     // Contagem viaturas por status
-    const vtrOp = viaturas.filter(v=>v[2]==='Operacional').length;
+    const vtrOp = viaturas.filter(v=>v[2]==='Em condições').length;
     const vtrMt = viaturas.filter(v=>v[2]==='Manutenção').length;
-    const vtrIn = viaturas.filter(v=>v[2]==='Inoperante').length;
-    const embOp = embarcacoes.filter(v=>v[2]==='Operacional').length;
+    const vtrIn = viaturas.filter(v=>v[2]==='Baixada').length;
+    const embOp = embarcacoes.filter(v=>v[2]==='Em condições').length;
     const embMt = embarcacoes.filter(v=>v[2]==='Manutenção').length;
-    const embIn = embarcacoes.filter(v=>v[2]==='Inoperante').length;
+    const embIn = embarcacoes.filter(v=>v[2]==='Baixada').length;
 
     return {
         tipo: 'mensal',
@@ -2993,7 +2995,7 @@ function atualizarAbaUnidade(idx, r) {
             const tabela = document.querySelector(`#u${uid}-c3 table:first-of-type tbody`);
             if (tabela) {
                 tabela.innerHTML = vtrs.map(v => {
-                    const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                    const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');
                     const pref = (v[1]||'').trim();
                     const descricao = pref ? `${v[0]} — ${pref}` : (v[0]||'—');
                     return `<tr>
@@ -3015,7 +3017,7 @@ function atualizarAbaUnidade(idx, r) {
                 const tbody = tabela.querySelector('tbody');
                 if (tbody) {
                     tbody.innerHTML = embs.map(v => {
-                        const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+                        const cond = (v[2]||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');
                         const pref = (v[1]||'').trim();
                         const descricao = pref ? `${v[0]} — ${pref}` : (v[0]||'—');
                         return `<tr>
