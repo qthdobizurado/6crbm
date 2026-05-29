@@ -2398,6 +2398,243 @@ async function enviarMensal() {
     enviarViaForm(SCRIPT_URL_MENSAL, payload, btn, sta, nomeCurto);
 }
 
+/* ===================== CARREGAR DADOS DO PAINEL ===================== */
+
+async function carregarDadosDoPainel() {
+    const url = (typeof SCRIPT_URL !== 'undefined') ? SCRIPT_URL : '';
+    if (!url || url === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
+
+    try {
+        // Carrega diários e mensais em paralelo
+        const [resDiario, resMensal] = await Promise.all([
+            fetch(`${url}?tipo=diario`).then(r => r.json()),
+            fetch(`${url}?tipo=mensal`).then(r => r.json())
+        ]);
+
+        if (resDiario.sucesso && resDiario.registros?.length) {
+            aplicarDadosDiarios(resDiario.registros);
+        }
+        if (resMensal.sucesso && resMensal.registros?.length) {
+            aplicarDadosMensais(resMensal.registros);
+        }
+
+        // Atualiza todos os painéis
+        calcularTotais();
+        if (window._charts) {
+            Object.values(window._charts).forEach(c => c.update());
+        }
+        renderQuadroDiario();
+
+        // Atualiza timestamp
+        const el = document.getElementById('quadro-data-hora');
+        if (el) el.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
+
+    } catch(e) {
+        console.warn('Erro ao carregar dados do painel:', e.message);
+    }
+}
+
+function aplicarDadosDiarios(registros) {
+    registros.forEach(r => {
+        const idx = unidades.findIndex(u => u.id == r.unidadeId);
+        if (idx === -1) return;
+
+        // Quadro diário
+        dadosQuadroDiario[idx] = {
+            unidade: r.unidade,
+            data:    r.timestamp || '—',
+            ord:     parseInt(r.efetivoOrd)   || 0,
+            ac4:     parseInt(r.efetivoAc4)   || 0,
+            vtrs:    r.vtrs    || '—',
+            oficial: r.oficial || 'Aguardando...',
+            contato: r.contato || '—'
+        };
+    });
+}
+
+function aplicarDadosMensais(registros) {
+    registros.forEach(r => {
+        const idx = unidades.findIndex(u => u.id == r.UnidadeId);
+        if (idx === -1) return;
+
+        const of  = parseInt(r.Oficiais)      || 0;
+        const pr  = parseInt(r.Pracas)        || 0;
+        const tot = of + pr;
+        const op  = parseInt(r.Operacional)   || 0;
+        const adOf= parseInt(r.AdmOficiais)   || 0;
+        const adPr= parseInt(r.AdmPracas)     || 0;
+        const aft = parseInt(r.Afastamentos)  || 0;
+        const vOp = parseInt(r.VtrOperacional)|| 0;
+        const vMt = parseInt(r.VtrManutencao) || 0;
+        const vIn = parseInt(r.VtrInoperante) || 0;
+        const eOp = parseInt(r.EmbOperacional)|| 0;
+        const eMt = parseInt(r.EmbManutencao) || 0;
+        const eIn = parseInt(r.EmbInoperante) || 0;
+
+        // Gráficos de efetivo
+        dadosEfetivo.datasets[0].data[idx] = of;
+        dadosEfetivo.datasets[1].data[idx] = pr;
+        dadosEfetivo.datasets[2].data[idx] = tot;
+        dadosOperacional.datasets[0].data[idx]    = op;
+        dadosAdministrativo.datasets[0].data[idx] = adOf;
+        dadosAdministrativo.datasets[1].data[idx] = adPr;
+        dadosAdministrativo.datasets[2].data[idx] = adOf + adPr;
+        dadosAfastamentos.datasets[0].data[idx]   = aft;
+
+        // Viaturas e embarcações
+        dadosViaturas[idx]    = [vOp, vMt, vIn];
+        dadosEmbarcacoes[idx] = [eOp, eMt, eIn];
+
+        // Materiais essenciais
+        const mats = [
+            parseInt(r.MatDesencarcerador)||0,
+            parseInt(r.MatDEA)||0,
+            parseInt(r.MatDrone)||0,
+            parseInt(r.MatCompressor)||0,
+            parseInt(r.MatMergulho)||0
+        ];
+        mats.forEach((v, mi) => { dadosMateriais[mi][idx] = v; });
+
+        // Atualiza a aba da unidade no painel
+        atualizarAbaUnidade(idx, r);
+    });
+}
+
+function atualizarAbaUnidade(idx, r) {
+    const uid = idx + 1;
+
+    // Comandante / Subcomandante
+    const elCmd = document.querySelector(`#u${uid}-c1 .comando-valor:nth-child(1), #u${uid}-c1 .comando-item:nth-child(1) .comando-valor`);
+    const elSub = document.querySelector(`#u${uid}-c1 .comando-item:nth-child(2) .comando-valor`);
+    if (elCmd && r.Comandante)    elCmd.textContent = r.Comandante;
+    if (elSub && r.Subcomandante) elSub.textContent = r.Subcomandante;
+
+    // Tabela de efetivo
+    try {
+        if (r.Efetivo) {
+            const ef = JSON.parse(r.Efetivo);
+            const tabela = document.querySelector(`#u${uid}-c1 tbody`);
+            if (tabela) {
+                const linhas = tabela.querySelectorAll('tr:not(.total-geral)');
+                let totOp=0, totAdm=0, totAft=0, totGeral=0;
+                ef.forEach((row, i) => {
+                    if (!linhas[i]) return;
+                    const tds = linhas[i].querySelectorAll('td');
+                    const op=row[0]||0, adm=row[1]||0, aft=row[2]||0, tot=op+adm+aft;
+                    if(tds[1]) tds[1].textContent = op  || '—';
+                    if(tds[2]) tds[2].textContent = adm || '—';
+                    if(tds[3]) tds[3].textContent = aft || '—';
+                    if(tds[4]) tds[4].textContent = tot || '—';
+                    totOp+=op; totAdm+=adm; totAft+=aft; totGeral+=tot;
+                });
+                const totRow = tabela.querySelector('.total-geral');
+                if (totRow) {
+                    const tds = totRow.querySelectorAll('td');
+                    if(tds[1]) tds[1].textContent = totOp;
+                    if(tds[2]) tds[2].textContent = totAdm;
+                    if(tds[3]) tds[3].textContent = totAft;
+                    if(tds[4]) tds[4].textContent = totGeral;
+                }
+            }
+        }
+    } catch(e) {}
+
+    // Especialistas
+    try {
+        if (r.Especialistas) {
+            const esp = JSON.parse(r.Especialistas);
+            const tabela = document.querySelector(`#u${uid}-c2 tbody`);
+            if (tabela) {
+                const linhas = tabela.querySelectorAll('tr');
+                esp.forEach((row, i) => {
+                    if (!linhas[i]) return;
+                    const tds = linhas[i].querySelectorAll('td');
+                    if(tds[1]) tds[1].textContent = row[0] || 0;
+                    if(tds[2]) tds[2].innerHTML = row[1] ? row[1].replace(/
+/g,'<br>') : '<em>—</em>';
+                });
+            }
+        }
+    } catch(e) {}
+
+    // Viaturas
+    try {
+        if (r.Viaturas) {
+            const vtrs = JSON.parse(r.Viaturas);
+            const tabela = document.querySelector(`#u${uid}-c3 .tabela-veiculo:nth-child(2) tbody,
+                                                    #u${uid}-c3 table:first-of-type tbody`);
+            if (tabela) {
+                tabela.innerHTML = vtrs.map(v =>
+                    `<tr><td class="col-tipo">${v[0]}<span class="prefixo-tag">${v[1]||''}</span></td>
+                     <td class="col-condicao"><span class="badge-condicao badge-${(v[2]||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}">${v[2]||'—'}</span></td></tr>`
+                ).join('') || '<tr><td colspan="2"><em>Nenhuma viatura cadastrada</em></td></tr>';
+            }
+        }
+    } catch(e) {}
+
+    // Embarcações
+    try {
+        if (r.Embarcacoes) {
+            const embs = JSON.parse(r.Embarcacoes);
+            const tabelas = document.querySelectorAll(`#u${uid}-c3 table`);
+            const tabela  = tabelas[1]; // segunda tabela = embarcações
+            if (tabela) {
+                const tbody = tabela.querySelector('tbody');
+                if (tbody) {
+                    tbody.innerHTML = embs.map(v =>
+                        `<tr><td class="col-tipo">${v[0]}<span class="prefixo-tag">${v[1]||''}</span></td>
+                         <td class="col-condicao"><span class="badge-condicao badge-${(v[2]||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}">${v[2]||'—'}</span></td></tr>`
+                    ).join('') || '<tr><td colspan="2"><em>Nenhuma embarcação cadastrada</em></td></tr>';
+                }
+            }
+        }
+    } catch(e) {}
+
+    // Materiais
+    try {
+        if (r.Materiais) {
+            const mats = JSON.parse(r.Materiais);
+            const tabela = document.querySelector(`#u${uid}-c4 tbody`);
+            if (tabela) {
+                const linhas = tabela.querySelectorAll('tr');
+                mats.forEach((m, i) => {
+                    if (!linhas[i]) return;
+                    const tds = linhas[i].querySelectorAll('td');
+                    if(tds[1]) tds[1].textContent = m[0] || 0;
+                    if(tds[2]) tds[2].textContent = m[1] || '—';
+                });
+            }
+        }
+    } catch(e) {}
+
+    // Plano de Chamada
+    try {
+        if (r.PlanoChamada) {
+            const pc = JSON.parse(r.PlanoChamada);
+            const tabela = document.querySelector(`#u${uid}-c5 tbody`);
+            if (tabela) {
+                tabela.innerHTML = pc.map(p =>
+                    `<tr><td>${p[0]||'—'}</td><td>${p[1]||'—'}</td><td>${p[2]||'—'}</td><td>${p[3]||'—'}</td></tr>`
+                ).join('') || '<tr><td colspan="4"><em>Nenhum dado cadastrado</em></td></tr>';
+            }
+        }
+    } catch(e) {}
+
+    // Área de Atuação
+    try {
+        if (r.AreaAtuacao) {
+            const aa = JSON.parse(r.AreaAtuacao);
+            const tabela = document.querySelector(`#u${uid}-c6 tbody`);
+            if (tabela) {
+                tabela.innerHTML = aa.map(m =>
+                    `<tr><td>${m[0]||'—'}</td><td class="num">${m[1]||0}</td><td class="num">${(m[2]||0).toLocaleString('pt-BR')}</td><td class="num">${(m[3]||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`
+                ).join('') || '<tr><td colspan="4"><em>Nenhum município cadastrado</em></td></tr>';
+                calcularTotaisAA(uid);
+            }
+        }
+    } catch(e) {}
+}
+
 /* ===================== INIT ===================== */
 document.addEventListener('DOMContentLoaded', function() {
     // Aplicar configurações do config.js
@@ -2431,6 +2668,11 @@ document.addEventListener('DOMContentLoaded', function() {
     renderQuadroDiario();
     gerarLinksUI();
     verificarURLParams();
+
+    // Carrega dados reais da planilha
+    carregarDadosDoPainel();
+    // Atualiza automaticamente a cada 5 minutos
+    setInterval(carregarDadosDoPainel, 5 * 60 * 1000);
 });
 </script>
 </body>
