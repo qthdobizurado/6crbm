@@ -2190,6 +2190,26 @@ function iniciarFormularioMensal() {
         _pcFocusTrap.focus(); // mantém foco no trap após apagar
     }, true);
 
+    // ── Copiar células selecionadas com Ctrl+C — PC, AA e Viaturas ──────
+    // Um único listener no document intercepta o copy e monta o texto
+    // no formato de uma coluna (uma linha por célula), pronto para colar
+    // no Excel/Sheets ou em outra célula da tabela.
+    document.addEventListener('copy', function(e) {
+        // ── Plano de Chamada ──
+        if (_pcSelInicio !== null && _pcSelFim !== null) {
+            const tbody = document.getElementById('fm-pc-body');
+            const af = document.activeElement;
+            if (af === _pcFocusTrap || tbody?.contains(af)) {
+                const cells = _pcCelulasDe(_pcSelInicio.r, _pcSelInicio.c, _pcSelFim.r, _pcSelFim.c);
+                if (cells.length > 1) {
+                    e.preventDefault();
+                    e.clipboardData.setData('text/plain', cells.map(el => el.value).join('\n'));
+                    return;
+                }
+            }
+        }
+    }, true);
+
     // Clicar fora do Plano de Chamada limpa a seleção
     document.addEventListener('mousedown', function(e) {
         const tbody = document.getElementById('fm-pc-body');
@@ -2307,6 +2327,24 @@ function iniciarFormularioMensal() {
                 limparDestaque(); selInicio = null; selFim = null;
             }
         });
+
+        // Copiar linhas selecionadas com Ctrl+C (uma linha por viatura)
+        document.addEventListener('copy', function(e) {
+            if (selInicio === null || selFim === null) return;
+            const sels = linhasDe(selInicio, selFim);
+            if (sels.length <= 1) return;
+            const af = document.activeElement;
+            // Só age se o foco está nas linhas selecionadas ou fora de qualquer input
+            if (af && af.tagName === 'INPUT' || af?.tagName === 'TEXTAREA') {
+                if (!sels.some(tr => tr.contains(af))) return;
+            }
+            e.preventDefault();
+            const texto = sels.map(tr => {
+                const inputs = Array.from(tr.querySelectorAll('input,textarea'));
+                return inputs.map(el => el.value).join('\t');
+            }).join('\n');
+            e.clipboardData.setData('text/plain', texto);
+        }, true);
     }
 
     _vtrCriarSistema('fm-vtr-body');
@@ -2465,6 +2503,17 @@ function iniciarFormularioMensal() {
                 limparDestaque(); selInicio = null; selFim = null;
             }
         });
+
+        // Copiar células selecionadas com Ctrl+C
+        document.addEventListener('copy', function(e) {
+            if (selInicio === null || selFim === null) return;
+            const cells = celulasDe(selInicio.r, selInicio.c, selFim.r, selFim.c);
+            if (cells.length <= 1) return;
+            const af = document.activeElement;
+            if (af !== focusTrap && !getBody()?.contains(af)) return;
+            e.preventDefault();
+            e.clipboardData.setData('text/plain', cells.map(el => el.value).join('\n'));
+        }, true);
     })();
 }
 
