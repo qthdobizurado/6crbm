@@ -2394,28 +2394,39 @@ function iniciarFormularioMensal() {
             focusTrap.focus();
         }, true);
 
-        // Paste inteligente — distribui linhas coladas na coluna onde o paste ocorreu
-        getBody()?.addEventListener('paste', function(e) {
-            const target = e.target;
-            const tbody  = getBody();
+        // Paste inteligente — captura no document (fase de captura) para pegar
+        // também campos type="number" que bloqueiam paste no listener do tbody
+        document.addEventListener('paste', function(e) {
+            const tbody = getBody();
+            if (!tbody) return;
+            // Só age se o foco está dentro da tabela AA
+            const af = document.activeElement;
+            if (!tbody.contains(af)) return;
+
             const rows   = Array.from(tbody.querySelectorAll('tr'));
-            const rowIdx = rows.findIndex(tr => tr.contains(target));
+            const rowIdx = rows.findIndex(tr => tr.contains(af));
             if (rowIdx === -1) return;
             const inputs = Array.from(rows[rowIdx].querySelectorAll('input'));
-            const colIdx = inputs.findIndex(el => el === target);
+            const colIdx = inputs.findIndex(el => el === af);
             if (colIdx === -1) return;
+
             const texto  = (e.clipboardData || window.clipboardData).getData('text');
             const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l);
             if (linhas.length <= 1) return;
+
             e.preventDefault();
+            e.stopPropagation();
             linhas.forEach((val, i) => {
                 if (rowIdx + i >= tbody.querySelectorAll('tr').length) adicionarLinhaAA();
                 const tr = tbody.querySelectorAll('tr')[rowIdx + i];
                 const el = tr.querySelectorAll('input')[colIdx];
-                if (el) el.value = val;
+                if (!el) return;
+                // Normaliza vírgula decimal para ponto (ex: "1.234,56" → "1234.56")
+                const valNorm = val.replace(/\./g, '').replace(',', '.');
+                el.value = isNaN(parseFloat(valNorm)) ? val : valNorm;
             });
             calcularTotaisFormAA();
-        });
+        }, true);
 
         // Clicar fora limpa seleção
         document.addEventListener('mousedown', function(e) {
