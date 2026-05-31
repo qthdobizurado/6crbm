@@ -1577,25 +1577,45 @@ function solicitarSenha(aba, callback) {
     setTimeout(() => document.getElementById('modal-senha-input').focus(), 100);
 }
 
-function confirmarSenha() {
-    const input = document.getElementById('modal-senha-input').value;
-    const senhaCorreta = (typeof SENHA_RESTRITA !== 'undefined') ? SENHA_RESTRITA : 'cbm6crbm';
-    if (input === senhaCorreta) {
-        const chave = _senhaAba || 'plano-chamada';
-        const aba      = _senhaAba;
-        const callback = _senhaCallback;
-        _senhaDesbloqueada[chave] = true;
-        fecharModalSenha();
-        if (aba) abrirAba(aba);
-        else if (callback) callback();
-    } else {
-        const erro = document.getElementById('modal-senha-erro');
-        const inp  = document.getElementById('modal-senha-input');
+async function confirmarSenha() {
+    const input  = document.getElementById('modal-senha-input').value.trim();
+    const btnOk  = document.querySelector('#modal-senha button[onclick="confirmarSenha()"]');
+    const erro   = document.getElementById('modal-senha-erro');
+    const inp    = document.getElementById('modal-senha-input');
+
+    if (!input) { inp.focus(); return; }
+
+    // Desabilita o botao enquanto aguarda resposta do servidor
+    if (btnOk) { btnOk.disabled = true; btnOk.textContent = 'Verificando...'; }
+    erro.style.display = 'none';
+
+    try {
+        // Validacao ocorre no servidor — a senha nunca fica exposta no front-end
+        const url = SCRIPT_URL + '?acao=verificarSenha&senha=' + encodeURIComponent(input);
+        const res  = await fetch(url);
+        const json = await res.json();
+
+        if (json.sucesso) {
+            const chave    = _senhaAba || 'plano-chamada';
+            const aba      = _senhaAba;
+            const callback = _senhaCallback;
+            _senhaDesbloqueada[chave] = true;
+            fecharModalSenha();
+            if (aba) abrirAba(aba);
+            else if (callback) callback();
+        } else {
+            erro.textContent = '❌ Senha incorreta!';
+            erro.style.display = 'block';
+            inp.value = '';
+            inp.style.border = '2px solid var(--vermelho)';
+            inp.focus();
+            setTimeout(() => { inp.style.border = '2px solid #ddd'; }, 1500);
+        }
+    } catch (e) {
+        erro.textContent = '⚠️ Erro de conexão. Tente novamente.';
         erro.style.display = 'block';
-        inp.value = '';
-        inp.style.border = '2px solid var(--vermelho)';
-        inp.focus();
-        setTimeout(() => { inp.style.border = '2px solid #ddd'; }, 1500);
+    } finally {
+        if (btnOk) { btnOk.disabled = false; btnOk.textContent = 'Confirmar'; }
     }
 }
 
