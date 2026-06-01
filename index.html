@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
+        html{zoom:0.8}
         :root{
             --vermelho:#CE1126;--vermelho-esc:#8B0000;--amarelo:#FFD700;
             --cinza:#495057;--cinza-esc:#343a40;--texto:#2c3e50;--fundo:#f8f9fa;
@@ -16,25 +17,25 @@
             --u1:#1e5fa5;--u2:#fb8c00;--u3:#28a745;--u4:#d85a30;--u5:#888780;--u6:#6a1fb5;
         }
         body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(135deg,#f5f7fa,#c3cfe2);min-height:100vh;color:var(--texto)}
-        header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;text-align:center;padding:30px 20px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-        header h1{font-size:2rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
-        header h2{font-size:1.1rem;font-weight:400;opacity:.95}
+        header{background:linear-gradient(135deg,var(--vermelho),var(--vermelho-esc));color:#fff;text-align:center;padding:16px 20px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+        header h1{font-size:1.5rem;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+        header h2{font-size:.95rem;font-weight:400;opacity:.95}
         nav{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1);position:sticky;top:0;z-index:100}
-        nav button{background:none;border:none;color:var(--texto);padding:18px 35px;font-size:.95rem;cursor:pointer;transition:all .3s;text-transform:uppercase;font-weight:600;letter-spacing:.5px;border-bottom:3px solid transparent}
+        nav button{background:none;border:none;color:var(--texto);padding:12px 25px;font-size:.85rem;cursor:pointer;transition:all .3s;text-transform:uppercase;font-weight:600;letter-spacing:.5px;border-bottom:3px solid transparent}
         nav button:hover{background:#f8f9fa;color:var(--vermelho)}
         nav button.ativo{color:var(--vermelho);border-bottom-color:var(--vermelho);background:#fff5f5}
-        main{padding:30px 20px;max-width:1400px;margin:0 auto}
+        main{padding:16px 20px;max-width:1400px;margin:0 auto}
         .conteudo-aba{display:none;animation:fadeIn .5s}
         .conteudo-aba.ativo{display:block}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
         /* ===== NAVEGAÇÃO DASHBOARDS ===== */
-        .dashboard-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:15px}
-        .dash-arrow{background:var(--vermelho);color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 3px 8px rgba(0,0,0,.25);flex-shrink:0}
+        .dashboard-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:10px}
+        .dash-arrow{background:var(--vermelho);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 3px 8px rgba(0,0,0,.25);flex-shrink:0}
         .dash-arrow:hover{background:var(--vermelho-esc);transform:scale(1.1)}
         .dash-arrow:disabled{background:#adb5bd;cursor:not-allowed;transform:none;box-shadow:none}
         .dash-titulo-wrapper{text-align:center;flex:1}
-        .dashboard-title{color:#000;text-transform:uppercase;font-size:1.5rem;border-bottom:3px solid #000;padding-bottom:10px;display:inline-block;width:100%}
+        .dashboard-title{color:#000;text-transform:uppercase;font-size:1.2rem;border-bottom:3px solid #000;padding-bottom:8px;display:inline-block;width:100%}
         .dashboard-info{text-align:center;color:var(--cinza);font-size:.85rem;margin-top:10px;font-style:italic}
         .dash-indicadores{display:flex;justify-content:center;gap:8px;margin-top:8px}
         .dash-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--cinza);background:transparent;cursor:pointer;transition:all .2s}
@@ -43,13 +44,13 @@
         .dashboard-panel.ativo{display:block}
 
         /* ===== DASHBOARD EFETIVO ===== */
-        .dashboard-section{margin-bottom:40px}
-        .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px}
+        .dashboard-section{margin-bottom:22px}
+        .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
         .card-estatistico{background:#fff;border:3px solid #000;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);overflow:hidden}
         .card-header{background:var(--amarelo);color:#000;padding:15px 20px;font-weight:700;text-transform:uppercase;font-size:1rem;border-bottom:2px solid #000;text-align:center}
         .card-body{padding:20px}
         .card-label{font-size:.9rem;color:var(--cinza);text-align:center;text-transform:uppercase;letter-spacing:.5px;margin-bottom:15px}
-        .chart-container{position:relative;height:220px;width:100%}
+        .chart-container{position:relative;height:180px;width:100%}
         .legend-custom{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:15px}
         .legend-item{display:flex;align-items:center;gap:6px;font-size:.8rem}
         .legend-color{width:16px;height:16px;border-radius:3px;border:1px solid #000}
@@ -58,7 +59,7 @@
         .legend-total{background:#28A745}
         .resumo-rapido{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:25px}
         .resumo-card{background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));color:#fff;padding:15px;border-radius:8px;text-align:center;border:2px solid #000}
-        .resumo-card .numero{font-size:1.8rem;font-weight:800;display:block;margin:5px 0}
+        .resumo-card .numero{font-size:1.5rem;font-weight:800;display:block;margin:4px 0}
         .resumo-card .rotulo{font-size:.8rem;text-transform:uppercase;opacity:.95}
 
         /* ===== DASHBOARD ESPECIALISTAS ===== */
@@ -134,7 +135,7 @@
         .leg-box{width:13px;height:13px;border-radius:2px;border:1px solid #000}
 
         /* ===== UNIDADES ===== */
-        .titulo-unidades{text-align:center;color:#000;margin:30px 0 15px;text-transform:uppercase;font-size:1.5rem;border-bottom:3px solid #000;padding-bottom:10px;display:inline-block;width:100%}
+        .titulo-unidades{text-align:center;color:#000;margin:16px 0 10px;text-transform:uppercase;font-size:1.2rem;border-bottom:3px solid #000;padding-bottom:8px;display:inline-block;width:100%}
         .unidades-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 0 18px}
         .unidade-tab{
             color:#fff;border:none;padding:0;cursor:pointer;
