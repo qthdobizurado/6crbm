@@ -71,13 +71,13 @@ const CONFIG_UNIDADES = [
         tipo:  'Destacamento de Bombeiros Militar — 1ª PBM',
         abrev: 'DBM Moz',
         slug:  'dbmmoz'
-    }
+    },
    {
         nome:  'DBM - Itapuranga (17ª CIBM)',
         tipo:  'Destacamento de Bombeiros Militar — 17ª CIBM',
         abrev: 'DBM Ita',
         slug:  'dbmita'
-    }
+    },
 {
         nome:  'DBM - Aragarças (13ª CIBM)',
         tipo:  'Destacamento de Bombeiros Militar — 13ª CIBM',
