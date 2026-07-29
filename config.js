@@ -61,14 +61,14 @@ const CONFIG_UNIDADES = [
         slug:  '19cibm'
     },
     {
-        nome:  '1º PBM - Aruana',
+        nome:  '1º PBM - Aruanã',
         tipo:  'Posto de Bombeiros Militar',
         abrev: '1º PBM',
         slug:  '1pbm'
     },
     {
         nome:  'DBM - Mozarlândia (1º PBM)',
-        tipo:  'Destacamento de Bombeiros Militar — 1ª PBM',
+        tipo:  'Destacamento de Bombeiros Militar — 1º PBM',
         abrev: 'DBM Moz',
         slug:  'dbmmoz'
     },
