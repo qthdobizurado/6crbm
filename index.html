@@ -351,6 +351,19 @@
         tr.fm-vtr-linha-sel td{background:#e8f5e9!important;outline:none}
         tr.fm-vtr-linha-sel td:first-child{border-left:3px solid #2e7d32!important}
 
+        /* Ações de linha: remover e reordenar */
+        .fm-th-acoes{width:86px;min-width:86px;text-align:center!important}
+        .fm-td-acoes{width:86px;min-width:86px;padding:3px 5px!important;text-align:center;background:#f8f9fa}
+        .fm-acoes-linha{display:flex;align-items:center;justify-content:center;gap:5px}
+        .fm-drag-handle,.fm-btn-remover{width:32px;height:30px;border:1px solid #999;border-radius:5px;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;line-height:1;transition:all .15s}
+        .fm-drag-handle{cursor:grab;color:#495057;user-select:none;touch-action:none}
+        .fm-drag-handle:active{cursor:grabbing}
+        .fm-drag-handle:hover{background:#e9ecef;border-color:#495057}
+        .fm-btn-remover{cursor:pointer;color:#b00020}
+        .fm-btn-remover:hover{background:#ffe5e9;border-color:#b00020}
+        .fm-linha-arrastando{opacity:.45;background:#e3f2fd!important}
+        .fm-linha-destino td{border-top:3px solid #1e5fa5!important}
+
         /* ===== DASHBOARD ÁREA DE ATUAÇÃO ===== */
         .aa-dash-wrapper{display:flex;flex-direction:column;gap:25px}
         .aa-dash-resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:5px}
@@ -1965,14 +1978,16 @@ async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
 
         if (jsonCheck.sucesso && jsonCheck.registro) {
             sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Obrigado.';
-            btn.textContent = '✅ Enviado';
+            sta.textContent = '✅ Dados enviados com sucesso! Você pode alterar e enviar novamente.';
         } else {
             // Chegou aqui mas não confirmou — provavelmente enviou mesmo assim
             sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados! (confirmação pendente)';
-            btn.textContent = '✅ Enviado';
+            sta.textContent = '✅ Dados enviados! Você pode alterar e enviar novamente.';
         }
+
+        // Libera o formulário para um novo envio sem precisar atualizar a página.
+        btn.disabled = false;
+        btn.textContent = '📤 Enviar novamente ao ' + (nomeCurto || '6º CRBM');
     } catch(e) {
         sta.style.color = 'var(--vermelho)';
         sta.textContent = '❌ Erro ao enviar: ' + e.message;
@@ -2005,6 +2020,7 @@ function navegarFmTab(dir) {
 function iniciarFormularioMensal() {
     if (window._fmIniciado) return;
     window._fmIniciado = true;
+    iniciarAcoesLinhasMensal();
     // Monta tabela de efetivo por patente
     const tbody = document.getElementById('fm-efetivo-body');
     if (tbody) {
@@ -2573,11 +2589,102 @@ function calcularTotaisFormAA() {
     document.getElementById('fm-aa-area-tot').textContent = area.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+// Adiciona em cada linha um botão de remoção e uma alça para reordenação.
+function iniciarAcoesLinhasMensal() {
+    const tabelas = [
+        { bodyId: 'fm-vtr-body', tabelaId: 'fm-tabela-vtr' },
+        { bodyId: 'fm-emb-body', tabelaId: 'fm-tabela-emb' },
+        { bodyId: 'fm-pc-body',  tabelaId: 'fm-tabela-pc'  },
+        { bodyId: 'fm-aa-body',  tabelaId: 'fm-tabela-aa'  }
+    ];
+
+    tabelas.forEach(({bodyId, tabelaId}) => {
+        const tbody = document.getElementById(bodyId);
+        const tabela = document.getElementById(tabelaId);
+        if (!tbody || !tabela) return;
+
+        const cabecalho = tabela.querySelector('thead tr');
+        if (cabecalho && !cabecalho.querySelector('.fm-th-acoes')) {
+            const th = document.createElement('th');
+            th.className = 'fm-th-acoes';
+            th.textContent = 'AÇÕES';
+            cabecalho.appendChild(th);
+        }
+
+        // Mantém o rodapé da Área de Atuação alinhado com a nova coluna.
+        const rodape = tabela.querySelector('tfoot tr');
+        if (rodape && !rodape.querySelector('.fm-td-acoes')) {
+            const td = document.createElement('td');
+            td.className = 'fm-td-acoes';
+            td.setAttribute('aria-hidden', 'true');
+            rodape.appendChild(td);
+        }
+
+        tbody.querySelectorAll('tr').forEach(prepararLinhaMensal);
+
+        // Observa linhas criadas por colagem, carregamento ou botão "Adicionar".
+        new MutationObserver(mutations => {
+            mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && node.matches('tr')) prepararLinhaMensal(node);
+            }));
+        }).observe(tbody, { childList: true });
+
+        tbody.addEventListener('click', e => {
+            const botao = e.target.closest('.fm-btn-remover');
+            if (!botao) return;
+            const linha = botao.closest('tr');
+            if (linha) linha.remove();
+            if (bodyId === 'fm-aa-body') calcularTotaisFormAA();
+        });
+
+        tbody.addEventListener('dragstart', e => {
+            const alca = e.target.closest('.fm-drag-handle');
+            if (!alca) { e.preventDefault(); return; }
+            const linha = alca.closest('tr');
+            tbody._linhaArrastada = linha;
+            linha.classList.add('fm-linha-arrastando');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'reordenar-linha');
+        });
+
+        tbody.addEventListener('dragover', e => {
+            const arrastada = tbody._linhaArrastada;
+            const alvo = e.target.closest('tr');
+            if (!arrastada || !alvo || alvo === arrastada || alvo.parentElement !== tbody) return;
+            e.preventDefault();
+            const caixa = alvo.getBoundingClientRect();
+            const inserirDepois = e.clientY > caixa.top + caixa.height / 2;
+            tbody.insertBefore(arrastada, inserirDepois ? alvo.nextSibling : alvo);
+            tbody.querySelectorAll('.fm-linha-destino').forEach(tr => tr.classList.remove('fm-linha-destino'));
+            alvo.classList.add('fm-linha-destino');
+        });
+
+        tbody.addEventListener('drop', e => e.preventDefault());
+        tbody.addEventListener('dragend', () => {
+            tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('fm-linha-arrastando', 'fm-linha-destino'));
+            tbody._linhaArrastada = null;
+            if (bodyId === 'fm-aa-body') calcularTotaisFormAA();
+        });
+    });
+}
+
+function prepararLinhaMensal(tr) {
+    if (!tr || tr.querySelector('.fm-td-acoes')) return;
+    const td = document.createElement('td');
+    td.className = 'fm-td-acoes';
+    td.innerHTML = `<div class="fm-acoes-linha">
+        <span class="fm-drag-handle" draggable="true" role="button" tabindex="0" title="Arraste para mudar a posição da linha" aria-label="Arraste para mudar a posição da linha">☰</span>
+        <button type="button" class="fm-btn-remover" title="Remover linha" aria-label="Remover linha">🗑</button>
+    </div>`;
+    tr.appendChild(td);
+}
+
 function adicionarLinhaVtr() {
     const tbody = document.getElementById('fm-vtr-body');
     const tr = document.createElement('tr');
     tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Viatura..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td>';
     tbody.appendChild(tr);
+    prepararLinhaMensal(tr);
 }
 
 function adicionarLinhaEmb() {
@@ -2585,6 +2692,7 @@ function adicionarLinhaEmb() {
     const tr = document.createElement('tr');
     tr.innerHTML = '<td><textarea class="fm-input-cell fm-vtr-unico" rows="1" placeholder="Embarcação..." style="resize:none;overflow:hidden"></textarea></td><td><select class="fm-select-cell"><option value="Em condições">✅ Em condições</option><option value="Manutenção">🔧 Manutenção</option><option value="Baixada">❌ Baixada</option></select></td>';
     tbody.appendChild(tr);
+    prepararLinhaMensal(tr);
 }
 
 function adicionarLinhaPC() {
@@ -2592,6 +2700,7 @@ function adicionarLinhaPC() {
     const tr = document.createElement('tr');
     tr.innerHTML = '<td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
     tbody.appendChild(tr);
+    prepararLinhaMensal(tr);
 }
 
 function adicionarLinhaAA() {
@@ -2599,6 +2708,7 @@ function adicionarLinhaAA() {
     const tr = document.createElement('tr');
     tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td>';
     tbody.appendChild(tr);
+    prepararLinhaMensal(tr);
 }
 
 // Funções de pré-preenchimento das tabelas
@@ -3113,6 +3223,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnM = document.getElementById('btn-enviar-mensal');
     if (btnD) btnD.textContent = '📤 Enviar ao ' + nomeCurto;
     if (btnM) btnM.textContent = '📤 Enviar ao ' + nomeCurto;
+
+    // Após um envio, qualquer nova alteração mantém o botão disponível e
+    // informa claramente que os dados podem ser reenviados.
+    ['form-diario-wrapper', 'form-mensal-wrapper'].forEach(wrapperId => {
+        const wrapper = document.getElementById(wrapperId);
+        if (!wrapper) return;
+
+        const marcarComoAlterado = () => {
+            const btn = wrapper.querySelector('.form-btn-enviar');
+            const sta = wrapper.querySelector('.form-status');
+            if (!btn || btn.textContent.includes('Enviando')) return;
+            btn.disabled = false;
+            btn.textContent = '📤 Enviar novamente ao ' + nomeCurto;
+            if (sta && sta.textContent.includes('Dados enviados')) {
+                sta.style.color = '#856404';
+                sta.textContent = '✏️ Alterações feitas. Envie novamente para atualizar os dados.';
+            }
+        };
+
+        wrapper.addEventListener('input', marcarComoAlterado);
+        wrapper.addEventListener('change', marcarComoAlterado);
+        wrapper.addEventListener('dragend', marcarComoAlterado);
+        wrapper.addEventListener('click', event => {
+            if (event.target.closest('.fm-btn-remover, .aa-btn-remover, [data-acao="remover"]')) {
+                setTimeout(marcarComoAlterado, 0);
+            }
+        });
+    });
 
     // Tabs de unidades
     const tabsEl = document.getElementById('unidades-tabs');
