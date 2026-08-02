@@ -1797,10 +1797,18 @@ async function fetchJsonComRetry(url, opcoes = {}) {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-            const res = await fetch(url, {
+            // O Apps Script responde por meio de um redirecionamento temporário
+            // para script.googleusercontent.com. Acrescentar um valor único evita
+            // que navegador, proxy ou hospedagem reutilize um redirecionamento já
+            // expirado, que resulta em HTTP 404 intermitente.
+            const separador = url.includes('?') ? '&' : '?';
+            const urlSemCache = `${url}${separador}_=${Date.now()}_${tentativa}`;
+
+            const res = await fetch(urlSemCache, {
                 method: 'GET',
                 redirect: 'follow',
                 cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
                 signal: ctrl.signal
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
