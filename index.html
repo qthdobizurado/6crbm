@@ -1784,6 +1784,39 @@ async function verificarURLParams() {
     }
 }
 
+/* ===================== REQUISIÇÕES AO APPS SCRIPT ===================== */
+
+// O Apps Script pode demorar mais na primeira chamada (cold start).
+// Esta rotina usa timeout maior e repete automaticamente antes de desistir.
+async function fetchJsonComRetry(url, opcoes = {}) {
+    const tentativas = opcoes.tentativas || 3;
+    const timeoutMs  = opcoes.timeoutMs  || 15000;
+
+    let ultimoErro;
+    for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                redirect: 'follow',
+                cache: 'no-store',
+                signal: ctrl.signal
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (erro) {
+            ultimoErro = erro;
+            if (tentativa < tentativas) {
+                await new Promise(resolve => setTimeout(resolve, 900 * tentativa));
+            }
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+    throw ultimoErro || new Error('Falha ao consultar o servidor.');
+}
+
 /* ===================== PRÉ-PREENCHIMENTO ===================== */
 
 function mostrarStatusCarregamento(tipo, msg, cor) {
@@ -1802,8 +1835,7 @@ async function preencherFormularioDiario(uid) {
 
     try {
         const url = `${scriptUrl}?tipo=diario&unidadeId=${uid}`;
-        const res  = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
-        const json = await res.json();
+        const json = await fetchJsonComRetry(url, { tentativas: 3, timeoutMs: 15000 });
 
         if (!json.sucesso || !json.registro) {
             mostrarStatusCarregamento('diario', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
@@ -1841,8 +1873,7 @@ async function preencherFormularioMensal(uid) {
 
     try {
         const url = `${scriptUrl}?tipo=mensal&unidadeId=${uid}`;
-        const res  = await fetch(url, { method: 'GET', redirect: 'follow', cache: 'no-store' });
-        const json = await res.json();
+        const json = await fetchJsonComRetry(url, { tentativas: 3, timeoutMs: 15000 });
 
         if (!json.sucesso || !json.registro) {
             mostrarStatusCarregamento('mensal', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
@@ -2904,33 +2935,31 @@ async function enviarMensal() {
 /* ===================== CARREGAR DADOS DO PAINEL ===================== */
 
 async function carregarDadosDoPainel() {
-    // Atualiza timestamp independente de ter dados
     const elTs = document.getElementById('quadro-data-hora');
-
-    const fetchSeguro = async (u) => {
-        try {
-            const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 8000);
-            const res = await fetch(u, { method: 'GET', redirect: 'follow', cache: 'no-store', signal: ctrl.signal });
-            clearTimeout(timer);
-            const json = await res.json();
-            return json;
-        } catch(e) {
-            return null; // falha silenciosa — não trava nada
-        }
-    };
-
     const scriptUrl = (typeof SCRIPT_URL !== 'undefined') ? SCRIPT_URL : '';
 
-    // Diário
-    const resDiario = await fetchSeguro(`${scriptUrl}?tipo=diario`);
+    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') {
+        if (elTs) elTs.textContent = 'URL do servidor não configurada.';
+        return;
+    }
+
+    if (elTs) elTs.textContent = 'Atualizando informações...';
+
+    // As duas consultas são feitas juntas. Cada uma repete automaticamente
+    // caso o Apps Script esteja iniciando ou a conexão oscile.
+    const [diarioResult, mensalResult] = await Promise.allSettled([
+        fetchJsonComRetry(`${scriptUrl}?tipo=diario`, { tentativas: 3, timeoutMs: 15000 }),
+        fetchJsonComRetry(`${scriptUrl}?tipo=mensal`, { tentativas: 3, timeoutMs: 15000 })
+    ]);
+
+    const resDiario = diarioResult.status === 'fulfilled' ? diarioResult.value : null;
     if (resDiario?.sucesso && resDiario.registros?.length) {
         try { aplicarDadosDiarios(resDiario.registros); } catch(e) {}
         try { renderQuadroDiario(); } catch(e) {}
     }
 
     // Mensal
-    const resMensal = await fetchSeguro(`${scriptUrl}?tipo=mensal`);
+    const resMensal = mensalResult.status === 'fulfilled' ? mensalResult.value : null;
     if (resMensal?.sucesso && resMensal.registros?.length) {
         try { aplicarDadosMensais(resMensal.registros); } catch(e) {}
         try { calcularTotais(); } catch(e) {}
@@ -2950,7 +2979,20 @@ async function carregarDadosDoPainel() {
         try { window._aaPronto = false; if (dashAtual === 4) iniciarAreaAtuacao(); } catch(e) {}
     }
 
-    if (elTs) elTs.textContent = 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
+    if (elTs) {
+        const houveFalha = diarioResult.status === 'rejected' || mensalResult.status === 'rejected';
+        elTs.textContent = houveFalha
+            ? 'Atualização parcial. Nova tentativa automática em breve.'
+            : 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
+    }
+
+    // Se alguma consulta falhou, tenta novamente sem exigir atualização da página.
+    if (diarioResult.status === 'rejected' || mensalResult.status === 'rejected') {
+        clearTimeout(window._retryCarregarPainel);
+        window._retryCarregarPainel = setTimeout(() => {
+            carregarDadosDoPainel().catch(() => {});
+        }, 10000);
+    }
 }
 
 function aplicarDadosDiarios(registros) {
