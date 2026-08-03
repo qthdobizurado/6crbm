@@ -967,18 +967,18 @@
                                 </tr>
                             </thead>
                             <tbody id="fm-aa-body">
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome do município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
-                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell" placeholder="Nome do município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td></tr>
+                                <tr><td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td></tr>
                             </tbody>
                             <tfoot>
                                 <tr class="fm-total-geral">
                                     <td><strong>TOTAL</strong></td>
                                     <td id="fm-aa-dist-tot">—</td>
                                     <td id="fm-aa-pop-tot">0</td>
-                                    <td id="fm-aa-area-tot">0,00</td>
+                                    <td id="fm-aa-area-tot">0,000</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -1280,6 +1280,65 @@ function formatarPopulacao(valor) {
     return String(normalizarPopulacao(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+// Máscaras usadas nos campos do questionário mensal. Como inputs do tipo
+// number não aceitam separador de milhares, população e área usam type="text"
+// com teclado numérico/decimal no celular.
+function formatarCampoPopulacao(valor) {
+    const digitos = String(valor ?? '').replace(/\D/g, '');
+    if (!digitos) return '';
+    return digitos.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function formatarCampoArea(valor, casasDecimais = 3) {
+    // Máscara decimal fixa: os últimos três dígitos representam os décimos,
+    // centésimos e milésimos. Exemplos:
+    // 1 → 0,001 | 1234 → 1,234 | 1234567 → 1.234,567.
+    let digitos = String(valor ?? '').replace(/\D/g, '');
+    if (!digitos) return '';
+
+    digitos = digitos.replace(/^0+(?=\d)/, '');
+    const quantidadeCasas = Math.max(0, Number(casasDecimais) || 0);
+
+    if (quantidadeCasas === 0) {
+        return digitos.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    const preenchido = digitos.padStart(quantidadeCasas + 1, '0');
+    let inteiro = preenchido.slice(0, -quantidadeCasas).replace(/^0+(?=\d)/, '');
+    const decimal = preenchido.slice(-quantidadeCasas);
+    inteiro = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    return inteiro + ',' + decimal;
+}
+
+function posicionarCursorPorDigitos(campo, quantidadeDigitos) {
+    if (!campo || typeof campo.setSelectionRange !== 'function') return;
+    if (quantidadeDigitos <= 0) {
+        campo.setSelectionRange(0, 0);
+        return;
+    }
+    let vistos = 0;
+    let posicao = campo.value.length;
+    for (let i = 0; i < campo.value.length; i++) {
+        if (/\d/.test(campo.value[i])) vistos++;
+        if (vistos >= quantidadeDigitos) { posicao = i + 1; break; }
+    }
+    campo.setSelectionRange(posicao, posicao);
+}
+
+function aplicarMascaraAreaAtuacao(campo) {
+    if (!campo) return;
+    const inicio = campo.selectionStart ?? campo.value.length;
+    const digitosAntes = campo.value.slice(0, inicio).replace(/\D/g, '').length;
+
+    if (campo.classList.contains('fm-aa-populacao') || campo.classList.contains('aa-populacao')) {
+        campo.value = formatarCampoPopulacao(campo.value);
+        posicionarCursorPorDigitos(campo, digitosAntes);
+    } else if (campo.classList.contains('fm-aa-area') || campo.classList.contains('aa-area')) {
+        campo.value = formatarCampoArea(campo.value, 3);
+    }
+}
+
 // Converte números recebidos como number, "1234.5" ou no formato
 // brasileiro "1.234,5". O valor zero é válido e nunca é tratado como vazio.
 function normalizarNumeroNaoNegativo(valor) {
@@ -1333,7 +1392,7 @@ function iniciarAreaAtuacao() {
     document.getElementById('aa-resumo-grid').innerHTML = `
         <div class="aa-dash-resumo-card"><span class="rotulo">TOTAL MUNICÍPIOS</span><span class="numero">${totalMuns}</span><span style="font-size:.72rem;opacity:.8">MUNICÍPIOS</span></div>
         <div class="aa-dash-resumo-card"><span class="rotulo">POPULAÇÃO TOTAL</span><span class="numero">${formatarPopulacao(totalPop)}</span><span style="font-size:.72rem;opacity:.8">HABITANTES</span></div>
-        <div class="aa-dash-resumo-card"><span class="rotulo">ÁREA TOTAL</span><span class="numero">${totalArea.toLocaleString('pt-BR',{maximumFractionDigits:0})}</span><span style="font-size:.72rem;opacity:.8">KM²</span></div>
+        <div class="aa-dash-resumo-card"><span class="rotulo">ÁREA TOTAL</span><span class="numero">${formatarNumeroPtBr(totalArea, 3)}</span><span style="font-size:.72rem;opacity:.8">KM²</span></div>
         ${totaisPorUnidade.map(t => `<div class="aa-dash-resumo-card"><span class="rotulo">${t.nome}</span><span class="numero">${t.muns}</span><span style="font-size:.72rem;opacity:.8">MUNICÍPIOS</span></div>`).join('')}
     `;
 
@@ -1350,14 +1409,14 @@ function iniciarAreaAtuacao() {
                 <td class="num" style="text-align:left;padding-left:10px;font-weight:500;background:#fafafa">${r[0]}</td>
                 <td class="num">${formatarNumeroPtBr(r[1], 0)}</td>
                 <td class="num">${formatarPopulacao(r[2])}</td>
-                <td class="num">${formatarNumeroPtBr(r[3], 1)}</td>
+                <td class="num">${formatarNumeroPtBr(r[3], 3)}</td>
             `;
             tbody.appendChild(tr);
         });
     });
     document.getElementById('aa-total-dist').textContent = '—';
     document.getElementById('aa-total-pop').textContent  = formatarPopulacao(totalPop);
-    document.getElementById('aa-total-area').textContent = formatarNumeroPtBr(totalArea, 1);
+    document.getElementById('aa-total-area').textContent = formatarNumeroPtBr(totalArea, 3);
 
     const labels  = totaisPorUnidade.map(t => t.nome);
     const popData  = totaisPorUnidade.map(t => t.pop);
@@ -1565,8 +1624,8 @@ function gerarAreaAtuacao(id) {
         <tr>
             <td class="aa-td aa-td-mun"><input type="text" class="aa-input" placeholder="Nome do município..."></td>
             <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-            <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-            <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0,00" min="0" step="0.01"></td>
+            <td class="aa-td aa-td-num"><input type="text" inputmode="numeric" autocomplete="off" class="aa-input aa-input-num aa-populacao" placeholder="0"></td>
+            <td class="aa-td aa-td-num"><input type="text" inputmode="decimal" autocomplete="off" class="aa-input aa-input-num aa-area" placeholder="0,000"></td>
         </tr>`).join('');
     return `<div class="controle-conteudo" id="u${id}-c6">
         <h4>Área de Atuação</h4>
@@ -1587,7 +1646,7 @@ function gerarAreaAtuacao(id) {
                     <td style="text-align:left;padding-left:10px"><strong>TOTAL</strong></td>
                     <td class="num" id="u${id}-aa-dist-total">—</td>
                     <td class="num" id="u${id}-aa-pop-total">0</td>
-                    <td class="num" id="u${id}-aa-area-total">0,00</td>
+                    <td class="num" id="u${id}-aa-area-total">0,000</td>
                 </tr>
             </tfoot>
         </table>
@@ -1602,8 +1661,8 @@ function adicionarLinhaMunicipio(id) {
     tr.innerHTML = `
         <td class="aa-td aa-td-mun"><input type="text" class="aa-input" placeholder="Nome do município..."></td>
         <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-        <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0" min="0"></td>
-        <td class="aa-td aa-td-num"><input type="number" class="aa-input aa-input-num" placeholder="0,00" min="0" step="0.01"></td>
+        <td class="aa-td aa-td-num"><input type="text" inputmode="numeric" autocomplete="off" class="aa-input aa-input-num aa-populacao" placeholder="0"></td>
+        <td class="aa-td aa-td-num"><input type="text" inputmode="decimal" autocomplete="off" class="aa-input aa-input-num aa-area" placeholder="0,000"></td>
     `;
     tbody.appendChild(tr);
 }
@@ -1615,11 +1674,12 @@ function calcularTotaisAA(id) {
     let totalPop = 0, totalArea = 0;
 
     linhas.forEach(tr => {
-        const inputs = tr.querySelectorAll('input[type="number"]');
-        if (inputs.length >= 3) {
-            // Tabela com inputs (modo edição). Distância é individual e não possui total.
-            totalPop  += normalizarPopulacao(inputs[1]?.value);
-            totalArea += normalizarNumeroNaoNegativo(inputs[2]?.value);
+        const inputs = tr.querySelectorAll('input');
+        if (inputs.length >= 4) {
+            // [0]=Município, [1]=Distância, [2]=População, [3]=Área.
+            // Distância é individual e não possui total.
+            totalPop  += normalizarPopulacao(inputs[2]?.value);
+            totalArea += normalizarNumeroNaoNegativo(inputs[3]?.value);
         } else {
             // Tabela com texto puro (dados carregados do servidor).
             const tds = tr.querySelectorAll('td');
@@ -1633,7 +1693,7 @@ function calcularTotaisAA(id) {
     const areaEl = document.getElementById(`u${id}-aa-area-total`);
     if (distEl) distEl.textContent = '—';
     if (popEl)  popEl.textContent  = formatarPopulacao(totalPop);
-    if (areaEl) areaEl.textContent = formatarNumeroPtBr(totalArea, 2);
+    if (areaEl) areaEl.textContent = formatarNumeroPtBr(totalArea, 3);
 }
 
 // Datas de último preenchimento — inicializadas em branco, atualizadas via formulário
@@ -2818,9 +2878,17 @@ function iniciarFormularioMensal() {
                 const tr = tbody.querySelectorAll('tr')[rowIdx + i];
                 const el = tr.querySelectorAll('input')[colIdx];
                 if (!el) return;
-                // Normaliza vírgula decimal para ponto (ex: "1.234,56" → "1234.56")
-                const valNorm = val.replace(/\./g, '').replace(',', '.');
-                el.value = isNaN(parseFloat(valNorm)) ? val : valNorm;
+                if (el.classList.contains('fm-aa-populacao')) {
+                    el.value = formatarCampoPopulacao(val);
+                } else if (el.classList.contains('fm-aa-area')) {
+                    el.value = formatarCampoArea(val, 3);
+                } else if (el.type === 'number') {
+                    // Campos numéricos comuns continuam recebendo ponto decimal internamente.
+                    const valNorm = val.replace(/\./g, '').replace(',', '.');
+                    el.value = isNaN(parseFloat(valNorm)) ? '' : valNorm;
+                } else {
+                    el.value = val;
+                }
             });
             calcularTotaisFormAA();
         }, true);
@@ -2872,10 +2940,11 @@ function calcularTotaisFormAA() {
 
     let pop = 0, area = 0;
     tbody.querySelectorAll('tr').forEach(tr => {
-        // [0]=Distância individual, [1]=População, [2]=Área. Distância não possui total.
-        const cells = tr.querySelectorAll('input[type="number"]');
-        pop       += normalizarPopulacao(cells[1]?.value);
-        area      += normalizarNumeroNaoNegativo(cells[2]?.value);
+        // [0]=Município, [1]=Distância, [2]=População, [3]=Área.
+        // Distância não possui total.
+        const cells = tr.querySelectorAll('input');
+        pop       += normalizarPopulacao(cells[2]?.value);
+        area      += normalizarNumeroNaoNegativo(cells[3]?.value);
     });
 
     const distEl = document.getElementById('fm-aa-dist-tot');
@@ -2883,7 +2952,7 @@ function calcularTotaisFormAA() {
     const areaEl = document.getElementById('fm-aa-area-tot');
     if (distEl) distEl.textContent = '—';
     if (popEl)  popEl.textContent  = formatarPopulacao(pop);
-    if (areaEl) areaEl.textContent = formatarNumeroPtBr(area, 2);
+    if (areaEl) areaEl.textContent = formatarNumeroPtBr(area, 3);
 }
 
 // Adiciona em cada linha um botão de remoção e uma alça para reordenação.
@@ -2930,10 +2999,21 @@ function iniciarAcoesLinhasMensal() {
         // colar ou usar as setas dos campos numéricos.
         if (bodyId === 'fm-aa-body' && tbody.dataset.totaisAoDigitar !== '1') {
             const recalcular = e => {
-                if (e.target.matches('input[type="number"]')) calcularTotaisFormAA();
+                if (!e.target.matches('input')) return;
+                aplicarMascaraAreaAtuacao(e.target);
+                calcularTotaisFormAA();
             };
             tbody.addEventListener('input', recalcular);
             tbody.addEventListener('change', recalcular);
+            tbody.addEventListener('keydown', e => {
+                if (!e.target.classList.contains('fm-aa-populacao')) return;
+                if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                e.preventDefault();
+                const atual = normalizarPopulacao(e.target.value);
+                const proximo = Math.max(0, atual + (e.key === 'ArrowUp' ? 1 : -1));
+                e.target.value = formatarPopulacao(proximo);
+                calcularTotaisFormAA();
+            });
             tbody.dataset.totaisAoDigitar = '1';
         }
 
@@ -3014,7 +3094,7 @@ function adicionarLinhaPC() {
 function adicionarLinhaAA() {
     const tbody = document.getElementById('fm-aa-body');
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td>';
+    tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="text" inputmode="numeric" autocomplete="off" class="fm-input-cell fm-num fm-aa-populacao" placeholder="0"></td><td><input type="text" inputmode="decimal" autocomplete="off" class="fm-input-cell fm-num fm-aa-area" placeholder="0,000"></td>';
     tbody.appendChild(tr);
     prepararLinhaMensal(tr);
     calcularTotaisFormAA();
@@ -3095,8 +3175,8 @@ function preencherTabelaAA(aa) {
         const inputs = tr.querySelectorAll('input');
         if (inputs[0]) inputs[0].value = row[0]||'';
         if (inputs[1]) inputs[1].value = normalizarNumeroNaoNegativo(row[1]);
-        if (inputs[2]) inputs[2].value = normalizarPopulacao(row[2]);
-        if (inputs[3]) inputs[3].value = normalizarNumeroNaoNegativo(row[3]);
+        if (inputs[2]) inputs[2].value = formatarPopulacao(row[2]);
+        if (inputs[3]) inputs[3].value = formatarNumeroPtBr(row[3], 3);
     });
     calcularTotaisFormAA();
 }
@@ -3560,7 +3640,7 @@ function atualizarAbaUnidade(idx, r) {
             const tabela = document.querySelector(`#u${uid}-c6 tbody`);
             if (tabela) {
                 tabela.innerHTML = aa.map(m =>
-                    `<tr><td>${m[0] || '—'}</td><td class="num">${formatarNumeroPtBr(m[1], 0)}</td><td class="num">${formatarPopulacao(m[2])}</td><td class="num">${formatarNumeroPtBr(m[3], 2)}</td></tr>`
+                    `<tr><td>${m[0] || '—'}</td><td class="num">${formatarNumeroPtBr(m[1], 0)}</td><td class="num">${formatarPopulacao(m[2])}</td><td class="num">${formatarNumeroPtBr(m[3], 3)}</td></tr>`
                 ).join('') || '<tr><td colspan="4"><em>Nenhum município cadastrado</em></td></tr>';
                 calcularTotaisAA(uid);
             }
@@ -3572,6 +3652,7 @@ function atualizarAbaUnidade(idx, r) {
 document.addEventListener('input', function(e) {
     const campo = e.target.closest('.aa-input-num');
     if (!campo) return;
+    aplicarMascaraAreaAtuacao(campo);
     const painel = campo.closest('[id^="u"][id$="-c6"]');
     const id = painel?.id.match(/^u(\d+)-c6$/)?.[1];
     if (id) calcularTotaisAA(id);
