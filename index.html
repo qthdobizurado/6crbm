@@ -667,7 +667,7 @@
                                     <tfoot>
                                         <tr class="total-geral">
                                             <td colspan="2" style="text-align:left;padding-left:12px"><strong>TOTAL GERAL</strong></td>
-                                            <td class="num">—</td>
+                                            <td class="num" id="aa-total-dist">0</td>
                                             <td class="num" id="aa-total-pop">0</td>
                                             <td class="num" id="aa-total-area">0</td>
                                         </tr>
@@ -1254,12 +1254,14 @@ function iniciarAreaAtuacao() {
     const totaisPorUnidade = unidades.map(u => {
         const rows = dadosAreaAtuacao[u.id] || [];
         const muns = rows.length;
+        const dist = rows.reduce((s,r) => s + normalizarNumeroNaoNegativo(r[1]), 0);
         const pop  = rows.reduce((s,r) => s + normalizarPopulacao(r[2]), 0);
-        const area = rows.reduce((s,r) => s + r[3], 0);
-        return {nome: u.nome.split(' - ')[0], muns, pop, area};
+        const area = rows.reduce((s,r) => s + normalizarNumeroNaoNegativo(r[3]), 0);
+        return {nome: u.nome.split(' - ')[0], muns, dist, pop, area};
     });
 
     const totalMuns = totaisPorUnidade.reduce((s,t) => s + t.muns, 0);
+    const totalDist = totaisPorUnidade.reduce((s,t) => s + t.dist, 0);
     const totalPop  = totaisPorUnidade.reduce((s,t) => s + t.pop,  0);
     const totalArea = totaisPorUnidade.reduce((s,t) => s + t.area, 0);
 
@@ -1282,15 +1284,16 @@ function iniciarAreaAtuacao() {
             tr.innerHTML = `
                 ${ri === 0 ? `<td rowspan="${rows.length}" class="num" style="background:#f8f9fa;font-weight:700;color:${coresUnidades[ui]};border-right:2px solid #000;text-align:left;padding-left:10px;vertical-align:middle">${nomeUnidade}</td>` : ''}
                 <td class="num" style="text-align:left;padding-left:10px;font-weight:500;background:#fafafa">${r[0]}</td>
-                <td class="num">${r[1] === 0 ? '—' : r[1]}</td>
+                <td class="num">${formatarNumeroPtBr(r[1], 0)}</td>
                 <td class="num">${formatarPopulacao(r[2])}</td>
-                <td class="num">${r[3].toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}</td>
+                <td class="num">${formatarNumeroPtBr(r[3], 1)}</td>
             `;
             tbody.appendChild(tr);
         });
     });
+    document.getElementById('aa-total-dist').textContent = formatarNumeroPtBr(totalDist, 0);
     document.getElementById('aa-total-pop').textContent  = formatarPopulacao(totalPop);
-    document.getElementById('aa-total-area').textContent = totalArea.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+    document.getElementById('aa-total-area').textContent = formatarNumeroPtBr(totalArea, 1);
 
     const labels  = totaisPorUnidade.map(t => t.nome);
     const popData  = totaisPorUnidade.map(t => t.pop);
