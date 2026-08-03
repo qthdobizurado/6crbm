@@ -453,6 +453,17 @@
             placeholder="••••••••"
             onkeydown="if(event.key==='Enter') confirmarSenha()">
         <p id="modal-senha-erro" style="display:none;color:var(--vermelho);font-size:.8rem;font-weight:700;margin-bottom:8px">❌ Senha incorreta!</p>
+
+        <!-- Exibido somente quando ocorre uma falha técnica na validação. -->
+        <div id="modal-senha-diagnostico" style="display:none;margin:10px 0 12px;padding:10px;border:1px solid #e0b4b4;border-radius:8px;background:#fff7f7;text-align:left">
+            <p style="margin:0 0 7px;color:#7a1f1f;font-size:.76rem;font-weight:700">Log técnico (a senha não é incluída)</p>
+            <textarea id="modal-senha-log" readonly aria-label="Log técnico da falha de conexão"
+                style="display:block;width:100%;min-height:105px;max-height:180px;resize:vertical;padding:8px;border:1px solid #d8b5b5;border-radius:6px;background:#fff;color:#222;font:11px/1.35 monospace;letter-spacing:0;text-align:left;white-space:pre"></textarea>
+            <button type="button" id="btn-copiar-log-senha" onclick="copiarLogSenha()"
+                style="width:100%;margin-top:8px;padding:9px;border:1px solid #7a1f1f;border-radius:7px;background:#fff;color:#7a1f1f;cursor:pointer;font-weight:700;font-size:.78rem;text-transform:uppercase">📋 Copiar log técnico</button>
+            <p id="modal-senha-log-status" role="status" aria-live="polite" style="min-height:16px;margin:5px 0 0;color:#555;font-size:.7rem;text-align:center"></p>
+        </div>
+
         <div style="display:flex;gap:10px;margin-top:4px">
             <button onclick="fecharModalSenha()" style="flex:1;padding:10px;border:2px solid #ccc;border-radius:8px;background:#f1f1f1;cursor:pointer;font-weight:600;font-size:.85rem;text-transform:uppercase">Cancelar</button>
             <button onclick="confirmarSenha()" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--vermelho);color:#fff;cursor:pointer;font-weight:700;font-size:.85rem;text-transform:uppercase">Entrar</button>
@@ -1775,29 +1786,200 @@ function solicitarSenha(aba, callback, chavePersonalizada) {
     const modal = document.getElementById('modal-senha');
     document.getElementById('modal-senha-input').value = '';
     document.getElementById('modal-senha-erro').style.display = 'none';
+    ocultarDiagnosticoSenha();
     modal.style.display = 'flex';
     setTimeout(() => document.getElementById('modal-senha-input').focus(), 100);
+}
+
+let _ultimoLogSenha = '';
+
+function ocultarDiagnosticoSenha() {
+    const painel = document.getElementById('modal-senha-diagnostico');
+    const campo = document.getElementById('modal-senha-log');
+    const status = document.getElementById('modal-senha-log-status');
+    if (painel) painel.style.display = 'none';
+    if (campo) campo.value = '';
+    if (status) status.textContent = '';
+    _ultimoLogSenha = '';
+}
+
+function urlSeguraParaLog(valor) {
+    try {
+        const url = new URL(String(valor), window.location.href);
+        ['senha', 'password', 'pass', 'token', 'chave', 'key', 'secret'].forEach(nome => {
+            if (url.searchParams.has(nome)) url.searchParams.set(nome, '[REMOVIDO]');
+        });
+        return url.toString();
+    } catch (_) {
+        return String(valor || '')
+            .replace(/([?&](?:senha|password|pass|token|chave|key|secret)=)[^&#]*/gi, '$1[REMOVIDO]');
+    }
+}
+
+function textoSeguroParaLog(valor, segredo) {
+    let texto = String(valor == null ? '' : valor);
+    if (segredo) texto = texto.split(String(segredo)).join('[REMOVIDO]');
+    return texto
+        .replace(/([?&](?:senha|password|pass|token|chave|key|secret)=)[^&#\s]*/gi, '$1[REMOVIDO]')
+        .slice(0, 2500);
+}
+
+function detalhesConexaoParaLog() {
+    const conexao = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!conexao) return 'API navigator.connection indisponível';
+    return [
+        `tipo=${conexao.type || 'não informado'}`,
+        `effectiveType=${conexao.effectiveType || 'não informado'}`,
+        `downlink=${Number.isFinite(conexao.downlink) ? conexao.downlink + ' Mbps' : 'não informado'}`,
+        `rtt=${Number.isFinite(conexao.rtt) ? conexao.rtt + ' ms' : 'não informado'}`,
+        `saveData=${typeof conexao.saveData === 'boolean' ? conexao.saveData : 'não informado'}`
+    ].join(', ');
+}
+
+function criarLogSenha(dados) {
+    const resposta = dados.resposta;
+    const erro = dados.erro;
+    const linhas = [
+        '=== LOG DE VALIDAÇÃO DE SENHA ===',
+        `Data/hora local: ${new Date().toString()}`,
+        `Data/hora UTC: ${new Date().toISOString()}`,
+        `Ação protegida: ${dados.chave || 'não informada'}`,
+        `Página: ${urlSeguraParaLog(window.location.href)}`,
+        `Origem da página: ${window.location.origin || 'origem nula'}`,
+        `Protocolo da página: ${window.location.protocol}`,
+        `Online segundo navegador: ${navigator.onLine}`,
+        `Visibilidade da página: ${document.visibilityState || 'não informada'}`,
+        `User-Agent: ${navigator.userAgent}`,
+        `Idioma: ${navigator.language || 'não informado'}`,
+        `Conexão: ${detalhesConexaoParaLog()}`,
+        `Endpoint configurado: ${urlSeguraParaLog(SCRIPT_URL)}`,
+        `URL solicitada: ${urlSeguraParaLog(dados.urlSolicitada)}`,
+        `Método/modo: GET / cors`,
+        `Credentials: omit`,
+        `Redirect: follow`,
+        `Cache: no-store`,
+        `Duração até a falha: ${dados.duracaoMs} ms`,
+        `Fase da falha: ${dados.fase || 'fetch'}`,
+        `Resposta recebida: ${resposta ? 'sim' : 'não'}`
+    ];
+
+    if (resposta) {
+        linhas.push(
+            `HTTP status: ${resposta.status} ${resposta.statusText || ''}`.trim(),
+            `Response type: ${resposta.type || 'não informado'}`,
+            `Redirecionada: ${resposta.redirected}`,
+            `URL final: ${urlSeguraParaLog(resposta.url || '')}`
+        );
+    }
+
+    if (typeof dados.respostaTexto === 'string' && dados.respostaTexto) {
+        linhas.push(`Prévia da resposta: ${textoSeguroParaLog(dados.respostaTexto, dados.segredo).slice(0, 500)}`);
+    }
+
+    linhas.push(
+        `Erro nome: ${textoSeguroParaLog(erro && erro.name ? erro.name : 'Error', dados.segredo)}`,
+        `Erro mensagem: ${textoSeguroParaLog(erro && erro.message ? erro.message : erro, dados.segredo)}`
+    );
+
+    if (erro && erro.stack) {
+        linhas.push(`Stack: ${textoSeguroParaLog(erro.stack, dados.segredo)}`);
+    }
+
+    linhas.push('=== FIM DO LOG ===');
+    return linhas.join('\n');
+}
+
+function mostrarDiagnosticoSenha(log) {
+    _ultimoLogSenha = log;
+    const painel = document.getElementById('modal-senha-diagnostico');
+    const campo = document.getElementById('modal-senha-log');
+    const status = document.getElementById('modal-senha-log-status');
+    if (campo) campo.value = log;
+    if (status) status.textContent = '';
+    if (painel) painel.style.display = 'block';
+}
+
+async function copiarLogSenha() {
+    const campo = document.getElementById('modal-senha-log');
+    const status = document.getElementById('modal-senha-log-status');
+    const texto = _ultimoLogSenha || (campo ? campo.value : '');
+
+    if (!texto) {
+        if (status) status.textContent = 'Nenhum log disponível para copiar.';
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(texto);
+        } else {
+            if (!campo) throw new Error('Campo de log indisponível');
+            campo.focus();
+            campo.select();
+            campo.setSelectionRange(0, campo.value.length);
+            const copiado = document.execCommand('copy');
+            if (!copiado) throw new Error('Cópia não autorizada pelo navegador');
+        }
+        if (status) status.textContent = '✅ Log copiado. Cole-o na conversa.';
+    } catch (erro) {
+        if (campo) {
+            campo.focus();
+            campo.select();
+            campo.setSelectionRange(0, campo.value.length);
+        }
+        if (status) status.textContent = 'Selecione o texto acima e use Copiar.';
+    }
 }
 
 async function confirmarSenha() {
     const input  = document.getElementById('modal-senha-input').value.trim();
     const btnOk  = document.querySelector('#modal-senha button[onclick="confirmarSenha()"]');
-    const erro   = document.getElementById('modal-senha-erro');
+    const erroEl = document.getElementById('modal-senha-erro');
     const inp    = document.getElementById('modal-senha-input');
 
     if (!input) { inp.focus(); return; }
 
-    // Desabilita o botao enquanto aguarda resposta do servidor
     if (btnOk) { btnOk.disabled = true; btnOk.textContent = 'Verificando...'; }
-    erro.style.display = 'none';
+    erroEl.style.display = 'none';
+    ocultarDiagnosticoSenha();
+
+    const inicio = performance.now();
+    const url = new URL(SCRIPT_URL);
+    url.searchParams.set('acao', 'verificarSenha');
+    url.searchParams.set('senha', input);
+    url.searchParams.set('_', Date.now().toString());
+
+    let resposta = null;
+    let respostaTexto = '';
+    let fase = 'fetch';
 
     try {
-        // Validacao ocorre no servidor — a senha nunca fica exposta no front-end
-        const url = SCRIPT_URL + '?acao=verificarSenha&senha=' + encodeURIComponent(input);
-        const res  = await fetch(url);
-        const json = await res.json();
+        // A senha é enviada ao servidor, mas é removida de todo log exibido na tela.
+        resposta = await fetch(url.toString(), {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit',
+            redirect: 'follow',
+            cache: 'no-store'
+        });
 
-        if (json.sucesso) {
+        fase = 'leitura da resposta';
+        respostaTexto = await resposta.text();
+
+        if (!resposta.ok) {
+            throw new Error(`Servidor respondeu HTTP ${resposta.status} ${resposta.statusText || ''}`.trim());
+        }
+
+        fase = 'conversão do JSON';
+        let json;
+        try {
+            json = JSON.parse(respostaTexto);
+        } catch (_) {
+            throw new Error('O servidor não retornou um JSON válido.');
+        }
+
+        fase = 'validação do resultado';
+        if (json && json.sucesso === true) {
             const chave    = _senhaChave || _senhaAba || 'plano-chamada';
             const aba      = _senhaAba;
             const callback = _senhaCallback;
@@ -1806,18 +1988,33 @@ async function confirmarSenha() {
             if (aba) abrirAba(aba);
             else if (callback) callback();
         } else {
-            erro.textContent = '❌ Senha incorreta!';
-            erro.style.display = 'block';
+            erroEl.textContent = '❌ Senha incorreta!';
+            erroEl.style.display = 'block';
             inp.value = '';
             inp.style.border = '2px solid var(--vermelho)';
             inp.focus();
             setTimeout(() => { inp.style.border = '2px solid #ddd'; }, 1500);
         }
-    } catch (e) {
-        erro.textContent = '⚠️ Erro de conexão. Tente novamente.';
-        erro.style.display = 'block';
+    } catch (erro) {
+        const duracaoMs = Math.round(performance.now() - inicio);
+        const log = criarLogSenha({
+            erro,
+            resposta,
+            respostaTexto,
+            fase,
+            duracaoMs,
+            urlSolicitada: url.toString(),
+            chave: _senhaChave || _senhaAba || 'plano-chamada',
+            segredo: input
+        });
+
+        console.error('Falha técnica ao validar senha:', erro);
+        console.info(log);
+        erroEl.textContent = '⚠️ Erro de conexão. Copie o log técnico abaixo.';
+        erroEl.style.display = 'block';
+        mostrarDiagnosticoSenha(log);
     } finally {
-        if (btnOk) { btnOk.disabled = false; btnOk.textContent = 'Confirmar'; }
+        if (btnOk) { btnOk.disabled = false; btnOk.textContent = 'Entrar'; }
     }
 }
 
