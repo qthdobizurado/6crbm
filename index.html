@@ -1899,37 +1899,160 @@ async function verificarURLParams() {
     }
 }
 
-/* ===================== REQUISIÇÕES AO APPS SCRIPT ===================== */
+/* ===================== LEITURA DIRETA DA PLANILHA ===================== */
 
-// O Apps Script pode demorar mais na primeira chamada (cold start).
-// Esta rotina usa timeout maior e repete automaticamente antes de desistir.
-async function fetchJsonComRetry(url, opcoes = {}) {
-    const tentativas = opcoes.tentativas || 3;
-    const timeoutMs  = opcoes.timeoutMs  || 20000;
+let _cargaPainelEmAndamento = null;
 
+function obterConfiguracaoPlanilhaDashboard() {
+    const id = (typeof PLANILHA_DASHBOARD_ID !== 'undefined')
+        ? String(PLANILHA_DASHBOARD_ID || '').trim()
+        : '';
+    const aba = (typeof ABA_API_DASHBOARD !== 'undefined')
+        ? String(ABA_API_DASHBOARD || 'API_DASHBOARD').trim()
+        : 'API_DASHBOARD';
+    return { id, aba };
+}
+
+function montarUrlApiDashboard() {
+    const { id, aba } = obterConfiguracaoPlanilhaDashboard();
+    if (!id) throw new Error('PLANILHA_DASHBOARD_ID não configurado no config.js.');
+
+    return `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}` +
+        `/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(aba)}` +
+        `&tq=${encodeURIComponent('select *')}&_=${Date.now()}`;
+}
+
+function interpretarCsv(texto) {
+    const linhas = [];
+    let linha = [];
+    let campo = '';
+    let entreAspas = false;
+
+    for (let i = 0; i < texto.length; i++) {
+        const ch = texto[i];
+
+        if (ch === '"') {
+            if (entreAspas && texto[i + 1] === '"') {
+                campo += '"';
+                i++;
+            } else {
+                entreAspas = !entreAspas;
+            }
+        } else if (ch === ',' && !entreAspas) {
+            linha.push(campo);
+            campo = '';
+        } else if ((ch === '\n' || ch === '\r') && !entreAspas) {
+            if (ch === '\r' && texto[i + 1] === '\n') i++;
+            linha.push(campo);
+            if (linha.some(valor => valor !== '')) linhas.push(linha);
+            linha = [];
+            campo = '';
+        } else {
+            campo += ch;
+        }
+    }
+
+    linha.push(campo);
+    if (linha.some(valor => valor !== '')) linhas.push(linha);
+    return linhas;
+}
+
+function montarSnapshotDaApi(textoCsv) {
+    const texto = String(textoCsv || '').trim();
+    if (!texto) throw new Error('A aba API_DASHBOARD retornou conteúdo vazio.');
+    if (/^\s*</.test(texto)) {
+        throw new Error('A planilha não está acessível publicamente ou retornou uma página HTML.');
+    }
+
+    const linhas = interpretarCsv(texto);
+    if (linhas.length < 2) {
+        throw new Error('A aba API_DASHBOARD ainda não possui dados. Execute configurarProjeto() no Apps Script.');
+    }
+
+    const cabecalho = linhas[0].map(v => String(v || '').trim());
+    const idxTipo = cabecalho.indexOf('Tipo');
+    const idxUid = cabecalho.indexOf('UnidadeId');
+    const idxAtualizado = cabecalho.indexOf('AtualizadoEm');
+    const idxJson = cabecalho.indexOf('DadosJson');
+
+    if ([idxTipo, idxUid, idxAtualizado, idxJson].some(i => i < 0)) {
+        throw new Error('Cabeçalho inválido na aba API_DASHBOARD.');
+    }
+
+    const snapshot = {
+        versao: 1,
+        atualizadoEm: '',
+        diario: [],
+        mensal: []
+    };
+
+    for (let i = 1; i < linhas.length; i++) {
+        const cols = linhas[i];
+        const tipo = String(cols[idxTipo] || '').trim().toLowerCase();
+        const atualizadoEm = String(cols[idxAtualizado] || '').trim();
+        const dadosJson = String(cols[idxJson] || '').trim();
+        if (!tipo || !dadosJson) continue;
+
+        let dados;
+        try {
+            dados = JSON.parse(dadosJson);
+        } catch (erro) {
+            throw new Error(`JSON inválido na linha ${i + 1} da API_DASHBOARD.`);
+        }
+
+        if (tipo === 'meta') {
+            snapshot.atualizadoEm = dados.atualizadoEm || atualizadoEm || snapshot.atualizadoEm;
+            snapshot.versao = dados.versao || snapshot.versao;
+        } else if (tipo === 'diario') {
+            snapshot.diario.push(dados);
+        } else if (tipo === 'mensal') {
+            snapshot.mensal.push(dados);
+        }
+    }
+
+    if (!snapshot.atualizadoEm) {
+        snapshot.atualizadoEm = linhas[1]?.[idxAtualizado] || '';
+    }
+
+    return snapshot;
+}
+
+async function buscarSnapshotDireto(opcoes = {}) {
+    const tentativas = opcoes.tentativas || 2;
+    const timeoutMs = opcoes.timeoutMs || 12000;
     let ultimoErro;
+
     for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-            const res = await fetch(url, {
+            const resposta = await fetch(montarUrlApiDashboard(), {
                 method: 'GET',
+                mode: 'cors',
+                credentials: 'omit',
                 redirect: 'follow',
                 cache: 'no-store',
                 signal: ctrl.signal
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.json();
+            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+            const texto = await resposta.text();
+            return montarSnapshotDaApi(texto);
         } catch (erro) {
             ultimoErro = erro;
             if (tentativa < tentativas) {
-                await new Promise(resolve => setTimeout(resolve, 900 * tentativa));
+                await new Promise(resolve => setTimeout(resolve, 700 * tentativa));
             }
         } finally {
             clearTimeout(timer);
         }
     }
-    throw ultimoErro || new Error('Falha ao consultar o servidor.');
+
+    throw ultimoErro || new Error('Falha ao ler a planilha.');
+}
+
+async function obterSnapshotDashboard(opcoes = {}) {
+    // Sempre consulta a aba API_DASHBOARD. Nenhum resultado é salvo no navegador.
+    return buscarSnapshotDireto(opcoes);
 }
 
 /* ===================== PRÉ-PREENCHIMENTO ===================== */
@@ -1943,21 +2066,17 @@ function mostrarStatusCarregamento(tipo, msg, cor) {
 }
 
 async function preencherFormularioDiario(uid) {
-    const scriptUrl = (typeof SCRIPT_URL_DIARIO !== 'undefined') ? SCRIPT_URL_DIARIO : '';
-    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
-
     mostrarStatusCarregamento('diario', '🔄 Buscando último preenchimento...', '#1e5fa5');
 
     try {
-        const url = `${scriptUrl}?tipo=diario&unidadeId=${uid}`;
-        const json = await fetchJsonComRetry(url, { tentativas: 3, timeoutMs: 20000 });
+        const snapshot = await obterSnapshotDashboard({ tentativas: 2, timeoutMs: 12000 });
+        const r = snapshot.diario.find(registro => String(registro.unidadeId) === String(uid));
 
-        if (!json.sucesso || !json.registro) {
+        if (!r) {
             mostrarStatusCarregamento('diario', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
             return;
         }
 
-        const r = json.registro;
         const set = (id, val) => {
             const el = document.getElementById(id);
             if (el && val !== undefined && val !== null) el.value = val;
@@ -1976,86 +2095,49 @@ async function preencherFormularioDiario(uid) {
             '#856404'
         );
     } catch(e) {
-        mostrarStatusCarregamento('diario', '⚠️ Não foi possível carregar o último preenchimento.', '#6c757d');
+        mostrarStatusCarregamento('diario', '⚠️ Não foi possível ler a aba API_DASHBOARD.', '#6c757d');
     }
 }
 
 async function preencherFormularioMensal(uid) {
-    const scriptUrl = (typeof SCRIPT_URL_MENSAL !== 'undefined') ? SCRIPT_URL_MENSAL : '';
-    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') return;
-
     mostrarStatusCarregamento('mensal', '🔄 Buscando último preenchimento...', '#1e5fa5');
 
     try {
-        const url = `${scriptUrl}?tipo=mensal&unidadeId=${uid}`;
-        const json = await fetchJsonComRetry(url, { tentativas: 3, timeoutMs: 20000 });
+        const snapshot = await obterSnapshotDashboard({ tentativas: 2, timeoutMs: 12000 });
+        const r = snapshot.mensal.find(registro => String(registro.UnidadeId) === String(uid));
 
-        if (!json.sucesso || !json.registro) {
+        if (!r) {
             mostrarStatusCarregamento('mensal', '📋 Nenhum preenchimento anterior encontrado.', '#6c757d');
             return;
         }
 
-        const r = json.registro;
-
-        // Efetivo
-        const setT = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-        setT('fm-comandante',    r.Comandante   || '');
+        const setT = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val != null) el.value = val;
+        };
+        setT('fm-comandante',    r.Comandante || '');
         setT('fm-subcomandante', r.Subcomandante || '');
 
-        // Tabela efetivo — JSON array
         if (r.Efetivo) {
-            try {
-                const ef = JSON.parse(r.Efetivo);
-                preencherTabelaEfetivo(ef);
-            } catch(e) {}
+            try { preencherTabelaEfetivo(JSON.parse(r.Efetivo)); } catch(e) {}
         }
-
-        // Especialistas
         if (r.Especialistas) {
-            try {
-                const esp = JSON.parse(r.Especialistas);
-                preencherTabelaEsp(esp);
-            } catch(e) {}
+            try { preencherTabelaEsp(JSON.parse(r.Especialistas)); } catch(e) {}
         }
-
-        // Viaturas
         if (r.Viaturas) {
-            try {
-                const vtr = JSON.parse(r.Viaturas);
-                preencherTabelaVeiculos('fm-vtr-body', vtr);
-            } catch(e) {}
+            try { preencherTabelaVeiculos('fm-vtr-body', JSON.parse(r.Viaturas)); } catch(e) {}
         }
-
-        // Embarcações
         if (r.Embarcacoes) {
-            try {
-                const emb = JSON.parse(r.Embarcacoes);
-                preencherTabelaVeiculos('fm-emb-body', emb);
-            } catch(e) {}
+            try { preencherTabelaVeiculos('fm-emb-body', JSON.parse(r.Embarcacoes)); } catch(e) {}
         }
-
-        // Materiais
         if (r.Materiais) {
-            try {
-                const mat = JSON.parse(r.Materiais);
-                preencherTabelaMat(mat);
-            } catch(e) {}
+            try { preencherTabelaMat(JSON.parse(r.Materiais)); } catch(e) {}
         }
-
-        // Plano de Chamada
         if (r.PlanoChamada) {
-            try {
-                const pc = JSON.parse(r.PlanoChamada);
-                preencherTabelaPC(pc);
-            } catch(e) {}
+            try { preencherTabelaPC(JSON.parse(r.PlanoChamada)); } catch(e) {}
         }
-
-        // Área de Atuação
         if (r.AreaAtuacao) {
-            try {
-                const aa = JSON.parse(r.AreaAtuacao);
-                preencherTabelaAA(aa);
-            } catch(e) {}
+            try { preencherTabelaAA(JSON.parse(r.AreaAtuacao)); } catch(e) {}
         }
 
         const dataRef = r.Timestamp ? ` (ref: ${r.Timestamp})` : '';
@@ -2064,7 +2146,7 @@ async function preencherFormularioMensal(uid) {
             '#856404'
         );
     } catch(e) {
-        mostrarStatusCarregamento('mensal', '⚠️ Não foi possível carregar o último preenchimento.', '#6c757d');
+        mostrarStatusCarregamento('mensal', '⚠️ Não foi possível ler a aba API_DASHBOARD.', '#6c757d');
     }
 }
 
@@ -2095,6 +2177,30 @@ async function enviarDiario() {
 }
 
 /* ===================== ENVIO VIA POST ===================== */
+async function aguardarConfirmacaoEnvio(payload) {
+    const campoTimestamp = payload.tipo === 'diario' ? 'timestamp' : 'Timestamp';
+
+    for (let tentativa = 1; tentativa <= 5; tentativa++) {
+        await new Promise(resolve => setTimeout(resolve, tentativa === 1 ? 700 : 1200));
+        try {
+            const snapshot = await buscarSnapshotDireto({ tentativas: 1, timeoutMs: 10000 });
+            const lista = payload.tipo === 'diario' ? snapshot.diario : snapshot.mensal;
+            const registro = lista.find(item => {
+                const uid = payload.tipo === 'diario' ? item.unidadeId : item.UnidadeId;
+                return String(uid) === String(payload.unidadeId);
+            });
+
+            if (!registro) continue;
+            const timestampRegistro = String(registro[campoTimestamp] || '');
+            if (!payload.timestamp || timestampRegistro === String(payload.timestamp)) {
+                return snapshot;
+            }
+        } catch (erro) {}
+    }
+
+    return null;
+}
+
 async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
@@ -2102,8 +2208,7 @@ async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
     sta.textContent = 'Enviando dados...';
 
     try {
-        // Envia via POST (sem limite de tamanho de URL)
-        // no-cors é necessário para evitar bloqueio CORS do Apps Script no redirect
+        // O Apps Script recebe e grava os dados. O dashboard não usa esta rota para leitura.
         await fetch(url, {
             method: 'POST',
             mode: 'no-cors',
@@ -2111,27 +2216,18 @@ async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
             body: JSON.stringify(payload)
         });
 
-        // POST com no-cors não retorna resposta legível — confirma via GET de verificação
-        sta.textContent = 'Verificando envio...';
-        await new Promise(r => setTimeout(r, 1800)); // aguarda Apps Script processar
+        sta.textContent = 'Atualizando a planilha...';
+        const snapshotConfirmado = await aguardarConfirmacaoEnvio(payload);
 
-        const tipoCheck = payload.tipo;
-        const uidCheck  = payload.unidadeId;
-        const resCheck  = await fetch(`${url}?tipo=${tipoCheck}&unidadeId=${uidCheck}`, {
-            method: 'GET', redirect: 'follow', cache: 'no-store'
-        });
-        const jsonCheck = await resCheck.json();
-
-        if (jsonCheck.sucesso && jsonCheck.registro) {
+        if (snapshotConfirmado) {
             sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados com sucesso! Você pode alterar e enviar novamente.';
+            sta.textContent = '✅ Dados enviados e painel atualizado! Você pode alterar e enviar novamente.';
         } else {
-            // Chegou aqui mas não confirmou — provavelmente enviou mesmo assim
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados! Você pode alterar e enviar novamente.';
+            // O POST pode ter sido concluído, mas a publicação da planilha ainda não propagou.
+            sta.style.color = '#856404';
+            sta.textContent = '✅ Envio concluído. A atualização do painel pode levar alguns segundos.';
         }
 
-        // Libera o formulário para um novo envio sem precisar atualizar a página.
         btn.disabled = false;
         btn.textContent = '📤 Enviar novamente ao ' + (nomeCurto || '6º CRBM');
     } catch(e) {
@@ -3072,64 +3168,98 @@ async function enviarMensal() {
 
 /* ===================== CARREGAR DADOS DO PAINEL ===================== */
 
-async function carregarDadosDoPainel() {
-    const elTs = document.getElementById('quadro-data-hora');
-    const scriptUrl = (typeof SCRIPT_URL !== 'undefined') ? SCRIPT_URL : '';
+function aplicarSnapshotNoPainel(snapshot) {
+    if (!snapshot) return;
 
-    if (!scriptUrl || scriptUrl === 'COLE_AQUI_A_URL_DO_WEBAPP') {
-        if (elTs) elTs.textContent = 'URL do servidor não configurada.';
-        return;
-    }
-
-    if (elTs) elTs.textContent = 'Atualizando informações...';
-
-    // As duas consultas são feitas juntas. Cada uma repete automaticamente
-    // caso o Apps Script esteja iniciando ou a conexão oscile.
-    const [diarioResult, mensalResult] = await Promise.allSettled([
-        fetchJsonComRetry(`${scriptUrl}?tipo=diario`, { tentativas: 3, timeoutMs: 20000 }),
-        fetchJsonComRetry(`${scriptUrl}?tipo=mensal`, { tentativas: 3, timeoutMs: 20000 })
-    ]);
-
-    const resDiario = diarioResult.status === 'fulfilled' ? diarioResult.value : null;
-    if (resDiario?.sucesso && resDiario.registros?.length) {
-        try { aplicarDadosDiarios(resDiario.registros); } catch(e) {}
+    if (Array.isArray(snapshot.diario) && snapshot.diario.length) {
+        try { aplicarDadosDiarios(snapshot.diario); } catch(e) {}
         try { renderQuadroDiario(); } catch(e) {}
     }
 
-    // Mensal
-    const resMensal = mensalResult.status === 'fulfilled' ? mensalResult.value : null;
-    if (resMensal?.sucesso && resMensal.registros?.length) {
-        try { aplicarDadosMensais(resMensal.registros); } catch(e) {}
+    if (Array.isArray(snapshot.mensal) && snapshot.mensal.length) {
+        try { aplicarDadosMensais(snapshot.mensal); } catch(e) {}
         try { calcularTotais(); } catch(e) {}
         try {
             ['chartEfetivoTotal','chartOperacional','chartAdministrativo','chartAfastamentos']
                 .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
         } catch(e) {}
-        // Atualiza dashboards secundários se já tiverem sido abertos
-        try { if (window._vtrPronto) { ['chartViaturas','chartEmbarcacoes'].forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} }); } } catch(e) {}
-        try { if (window._matPronto) { try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {} } } catch(e) {}
-        // Especialistas — recria mini gráficos se dashboard já aberto, senão só reseta a flag
         try {
-            if (window._espPronto) { window._espPronto = false; }
+            if (window._vtrPronto) {
+                ['chartViaturas','chartEmbarcacoes']
+                    .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
+            }
+        } catch(e) {}
+        try {
+            if (window._matPronto) {
+                try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {}
+            }
+        } catch(e) {}
+        try {
+            if (window._espPronto) window._espPronto = false;
             if (dashAtual === 1) iniciarEspecialistas();
         } catch(e) {}
-        // Área de Atuação — força re-render se dashboard já aberto
-        try { window._aaPronto = false; if (dashAtual === 4) iniciarAreaAtuacao(); } catch(e) {}
+        try {
+            window._aaPronto = false;
+            if (dashAtual === 4) iniciarAreaAtuacao();
+        } catch(e) {}
     }
+}
 
-    if (elTs) {
-        const houveFalha = diarioResult.status === 'rejected' || mensalResult.status === 'rejected';
-        elTs.textContent = houveFalha
-            ? 'Atualização parcial. Nova tentativa automática em breve.'
-            : 'Atualizado em: ' + new Date().toLocaleString('pt-BR');
-    }
+function formatarDataSnapshot(valor) {
+    if (!valor) return new Date().toLocaleString('pt-BR');
+    const data = new Date(valor);
+    return isNaN(data.getTime()) ? String(valor) : data.toLocaleString('pt-BR');
+}
 
-    // Se alguma consulta falhou, tenta novamente sem exigir atualização da página.
-    if (diarioResult.status === 'rejected' || mensalResult.status === 'rejected') {
-        clearTimeout(window._retryCarregarPainel);
-        window._retryCarregarPainel = setTimeout(() => {
-            carregarDadosDoPainel().catch(() => {});
-        }, 10000);
+async function carregarDadosDoPainel() {
+    if (_cargaPainelEmAndamento) return _cargaPainelEmAndamento;
+
+    _cargaPainelEmAndamento = (async () => {
+        const elTs = document.getElementById('quadro-data-hora');
+        const { id } = obterConfiguracaoPlanilhaDashboard();
+
+        if (!id) {
+            if (elTs) elTs.textContent = 'ID da planilha não configurado no config.js.';
+            return;
+        }
+
+        if (elTs) {
+            elTs.textContent = 'Lendo informações atualizadas diretamente da planilha...';
+        }
+
+        try {
+            const snapshotNovo = await buscarSnapshotDireto({ tentativas: 2, timeoutMs: 12000 });
+            aplicarSnapshotNoPainel(snapshotNovo);
+            window._falhasLeituraPlanilha = 0;
+            clearTimeout(window._retryCarregarPainel);
+
+            if (elTs) {
+                elTs.textContent = 'Atualizado em: ' + formatarDataSnapshot(snapshotNovo.atualizadoEm);
+            }
+            return snapshotNovo;
+        } catch (erro) {
+            window._falhasLeituraPlanilha = (window._falhasLeituraPlanilha || 0) + 1;
+
+            if (elTs) {
+                elTs.textContent = 'Não foi possível obter dados atualizados da aba API_DASHBOARD: ' + erro.message;
+            }
+
+            // Faz somente uma nova tentativa automática, evitando tempestade de requisições.
+            if (window._falhasLeituraPlanilha <= 1) {
+                clearTimeout(window._retryCarregarPainel);
+                window._retryCarregarPainel = setTimeout(() => {
+                    carregarDadosDoPainel().catch(() => {});
+                }, 15000);
+            }
+
+            throw erro;
+        }
+    })();
+
+    try {
+        return await _cargaPainelEmAndamento;
+    } finally {
+        _cargaPainelEmAndamento = null;
     }
 }
 
@@ -3457,11 +3587,10 @@ document.addEventListener('DOMContentLoaded', function() {
     gerarLinksUI();
     verificarURLParams();
 
-    // Carrega dados reais da planilha após o UI estar pronto
-    // Usando setTimeout garante que o site abre normalmente primeiro
+    // Consulta sempre a versão atual da aba API_DASHBOARD.
     setTimeout(() => {
         carregarDadosDoPainel().catch(() => {});
-    }, 1500);
+    }, 100);
     // Atualiza a cada 5 minutos
     setInterval(() => {
         carregarDadosDoPainel().catch(() => {});

@@ -24,6 +24,14 @@ const SCRIPT_URL_DIARIO = SCRIPT_URL;
 const SCRIPT_URL_MENSAL = SCRIPT_URL;
 
 /* ------------------------------------------------------------
+   📊 LEITURA DIRETA DO DASHBOARD
+   O site lê apenas a aba API_DASHBOARD da mesma planilha.
+   A planilha precisa estar acessível para visualização por link.
+   ------------------------------------------------------------ */
+const PLANILHA_DASHBOARD_ID = '1joVnP30F4b1A-JtsgSF2lp_goHjIFIQt_novCkYDikY';
+const ABA_API_DASHBOARD     = 'API_DASHBOARD';
+
+/* ------------------------------------------------------------
    🏢  UNIDADES SUBORDINADAS
    Adicione, remova ou renomeie unidades aqui.
    Cada unidade precisa de:
