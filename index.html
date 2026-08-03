@@ -667,7 +667,7 @@
                                     <tfoot>
                                         <tr class="total-geral">
                                             <td colspan="2" style="text-align:left;padding-left:12px"><strong>TOTAL GERAL</strong></td>
-                                            <td class="num" id="aa-total-dist">0</td>
+                                            <td class="num" id="aa-total-dist">—</td>
                                             <td class="num" id="aa-total-pop">0</td>
                                             <td class="num" id="aa-total-area">0</td>
                                         </tr>
@@ -959,7 +959,7 @@
                             <tfoot>
                                 <tr class="fm-total-geral">
                                     <td><strong>TOTAL</strong></td>
-                                    <td id="fm-aa-dist-tot">0</td>
+                                    <td id="fm-aa-dist-tot">—</td>
                                     <td id="fm-aa-pop-tot">0</td>
                                     <td id="fm-aa-area-tot">0,00</td>
                                 </tr>
@@ -1254,14 +1254,12 @@ function iniciarAreaAtuacao() {
     const totaisPorUnidade = unidades.map(u => {
         const rows = dadosAreaAtuacao[u.id] || [];
         const muns = rows.length;
-        const dist = rows.reduce((s,r) => s + normalizarNumeroNaoNegativo(r[1]), 0);
         const pop  = rows.reduce((s,r) => s + normalizarPopulacao(r[2]), 0);
         const area = rows.reduce((s,r) => s + normalizarNumeroNaoNegativo(r[3]), 0);
-        return {nome: u.nome.split(' - ')[0], muns, dist, pop, area};
+        return {nome: u.nome.split(' - ')[0], muns, pop, area};
     });
 
     const totalMuns = totaisPorUnidade.reduce((s,t) => s + t.muns, 0);
-    const totalDist = totaisPorUnidade.reduce((s,t) => s + t.dist, 0);
     const totalPop  = totaisPorUnidade.reduce((s,t) => s + t.pop,  0);
     const totalArea = totaisPorUnidade.reduce((s,t) => s + t.area, 0);
 
@@ -1291,7 +1289,7 @@ function iniciarAreaAtuacao() {
             tbody.appendChild(tr);
         });
     });
-    document.getElementById('aa-total-dist').textContent = formatarNumeroPtBr(totalDist, 0);
+    document.getElementById('aa-total-dist').textContent = '—';
     document.getElementById('aa-total-pop').textContent  = formatarPopulacao(totalPop);
     document.getElementById('aa-total-area').textContent = formatarNumeroPtBr(totalArea, 1);
 
@@ -1521,7 +1519,7 @@ function gerarAreaAtuacao(id) {
             <tfoot>
                 <tr class="total-geral">
                     <td style="text-align:left;padding-left:10px"><strong>TOTAL</strong></td>
-                    <td class="num" id="u${id}-aa-dist-total">0</td>
+                    <td class="num" id="u${id}-aa-dist-total">—</td>
                     <td class="num" id="u${id}-aa-pop-total">0</td>
                     <td class="num" id="u${id}-aa-area-total">0,00</td>
                 </tr>
@@ -1548,19 +1546,17 @@ function calcularTotaisAA(id) {
     const cont = document.getElementById(`u${id}-c6`);
     if (!cont) return;
     const linhas = cont.querySelectorAll('tbody tr');
-    let totalDist = 0, totalPop = 0, totalArea = 0;
+    let totalPop = 0, totalArea = 0;
 
     linhas.forEach(tr => {
         const inputs = tr.querySelectorAll('input[type="number"]');
         if (inputs.length >= 3) {
-            // Tabela com inputs (modo edição). Zero é um valor válido.
-            totalDist += normalizarNumeroNaoNegativo(inputs[0]?.value);
+            // Tabela com inputs (modo edição). Distância é individual e não possui total.
             totalPop  += normalizarPopulacao(inputs[1]?.value);
             totalArea += normalizarNumeroNaoNegativo(inputs[2]?.value);
         } else {
             // Tabela com texto puro (dados carregados do servidor).
             const tds = tr.querySelectorAll('td');
-            totalDist += normalizarNumeroNaoNegativo(tds[1]?.textContent);
             totalPop  += normalizarPopulacao(tds[2]?.textContent);
             totalArea += normalizarNumeroNaoNegativo(tds[3]?.textContent);
         }
@@ -1569,7 +1565,7 @@ function calcularTotaisAA(id) {
     const distEl = document.getElementById(`u${id}-aa-dist-total`);
     const popEl  = document.getElementById(`u${id}-aa-pop-total`);
     const areaEl = document.getElementById(`u${id}-aa-area-total`);
-    if (distEl) distEl.textContent = formatarNumeroPtBr(totalDist, 0);
+    if (distEl) distEl.textContent = '—';
     if (popEl)  popEl.textContent  = formatarPopulacao(totalPop);
     if (areaEl) areaEl.textContent = formatarNumeroPtBr(totalArea, 2);
 }
@@ -2673,11 +2669,10 @@ function calcularTotaisFormAA() {
     const tbody = document.getElementById('fm-aa-body');
     if (!tbody) return;
 
-    let distancia = 0, pop = 0, area = 0;
+    let pop = 0, area = 0;
     tbody.querySelectorAll('tr').forEach(tr => {
-        // [0]=Distância, [1]=População, [2]=Área. O número 0 é válido.
+        // [0]=Distância individual, [1]=População, [2]=Área. Distância não possui total.
         const cells = tr.querySelectorAll('input[type="number"]');
-        distancia += normalizarNumeroNaoNegativo(cells[0]?.value);
         pop       += normalizarPopulacao(cells[1]?.value);
         area      += normalizarNumeroNaoNegativo(cells[2]?.value);
     });
@@ -2685,7 +2680,7 @@ function calcularTotaisFormAA() {
     const distEl = document.getElementById('fm-aa-dist-tot');
     const popEl  = document.getElementById('fm-aa-pop-tot');
     const areaEl = document.getElementById('fm-aa-area-tot');
-    if (distEl) distEl.textContent = formatarNumeroPtBr(distancia, 0);
+    if (distEl) distEl.textContent = '—';
     if (popEl)  popEl.textContent  = formatarPopulacao(pop);
     if (areaEl) areaEl.textContent = formatarNumeroPtBr(area, 2);
 }
