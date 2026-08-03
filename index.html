@@ -1641,7 +1641,7 @@ function gerarUnidade(u, ativo) {
                 <div class="unidade-header-info">
                     <h3>${u.nome}</h3>
                     <p class="unidade-subtipo">${u.tipo}</p>
-                    <span class="unidade-ultima-att" id="ultima-att-${u.id}">🕒 Último preenchimento: <strong>${dataPreench}</strong></span>
+                    <span class="unidade-ultima-att" id="ultima-att-${u.id}">🕒 Último preenchimento mensal: <strong>${dataPreench}</strong></span>
                 </div>
             </div>
             <div class="controles-tabs">${tabs}</div>
@@ -3168,8 +3168,20 @@ async function enviarMensal() {
 
 /* ===================== CARREGAR DADOS DO PAINEL ===================== */
 
+function resetarUltimosPreenchimentosMensais() {
+    unidades.forEach(u => {
+        const el = document.getElementById(`ultima-att-${u.id}`);
+        if (el) el.innerHTML = '🕒 Último preenchimento mensal: <strong>—</strong>';
+    });
+}
+
 function aplicarSnapshotNoPainel(snapshot) {
     if (!snapshot) return;
+
+    // O indicador das Unidades Operacionais representa exclusivamente o questionário mensal.
+    // Ele é zerado antes de aplicar o snapshot para que unidades sem linha em DadosMensais
+    // nunca herdem data do quadro diário nem mantenham uma data antiga após exclusão da linha.
+    resetarUltimosPreenchimentosMensais();
 
     if (Array.isArray(snapshot.diario) && snapshot.diario.length) {
         try { aplicarDadosDiarios(snapshot.diario); } catch(e) {}
@@ -3268,16 +3280,6 @@ function aplicarDadosDiarios(registros) {
         const idx = unidades.findIndex(u => u.id == r.unidadeId);
         if (idx === -1) return;
 
-        // Último preenchimento diário — só atualiza se esta unidade tem dado
-        const elAttD = document.getElementById(`ultima-att-${idx+1}`);
-        if (elAttD && r.timestamp) {
-            const ts = new Date(r.timestamp);
-            const fmt = isNaN(ts)
-                ? r.timestamp
-                : ts.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-            elAttD.innerHTML = `🕒 Último preenchimento: <strong>${fmt}</strong>`;
-        }
-
         // Quadro diário
         dadosQuadroDiario[idx] = {
             unidade: r.unidade,
@@ -3365,7 +3367,7 @@ function aplicarDadosMensais(registros) {
             const fmt = isNaN(ts)
                 ? r.Timestamp
                 : ts.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-            elAtt.innerHTML = `🕒 Último preenchimento: <strong>${fmt}</strong>`;
+            elAtt.innerHTML = `🕒 Último preenchimento mensal: <strong>${fmt}</strong>`;
         }
 
         // Atualiza a aba da unidade no painel
