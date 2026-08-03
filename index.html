@@ -422,6 +422,11 @@
         .qd-oficial{font-size:.78rem;text-align:center}
         .qd-oficial-nome{font-weight:700;color:#333;display:block}
         .qd-oficial-tel{font-size:.72rem;color:#1e5fa5;display:block;margin-top:2px}
+        .qd-oficial-tel.oculto{color:#777;font-style:italic;letter-spacing:.3px}
+        .qd-contato-cabecalho{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+        .qd-btn-contato{border:1px solid rgba(255,255,255,.85);background:#fff;color:var(--vermelho-esc);border-radius:5px;padding:4px 9px;font-size:.66rem;font-weight:800;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:filter .2s,transform .1s}
+        .qd-btn-contato:hover{filter:brightness(.92)}
+        .qd-btn-contato:active{transform:translateY(1px)}
         .qd-rodape td{background:linear-gradient(135deg,var(--cinza),var(--cinza-esc));color:#fff;font-size:.88rem;padding:9px 12px;border:2px solid #000;font-weight:700;text-align:center}
         .qd-rodape .qd-td-unidade{text-align:left;background:var(--cinza-esc)!important;color:#fff}
         .qd-rodape .qd-total{background:var(--vermelho-esc)!important;font-size:1rem}
@@ -478,7 +483,12 @@
                             <th rowspan="2" class="qd-th qd-th-unidade">Unidade BM</th>
                             <th colspan="3" class="qd-th qd-th-grupo">Efetivo</th>
                             <th rowspan="2" class="qd-th" style="min-width:280px">VTRs Ativas</th>
-                            <th rowspan="2" class="qd-th">Oficial de Dia ou Adjunto / Contato</th>
+                            <th rowspan="2" class="qd-th">
+                                <div class="qd-contato-cabecalho">
+                                    <span>Oficial de Dia ou Adjunto / Contato</span>
+                                    <button type="button" id="btn-ver-contatos" class="qd-btn-contato" onclick="alternarVisibilidadeContatos()">Ver contatos</button>
+                                </div>
+                            </th>
                         </tr>
                         <tr class="qd-cabecalho-sub">
                             <th class="qd-th qd-th-num">Ord.</th>
@@ -1687,11 +1697,13 @@ function _abrirControle(unidade, controle) {
 /* ===================== MODAL DE SENHA ===================== */
 let _senhaCallback = null;
 let _senhaAba = null;
+let _senhaChave = null;
 // Sessões desbloqueadas (por aba/tipo) para não pedir toda hora
 const _senhaDesbloqueada = {};
+let _contatosVisiveis = false;
 
-function solicitarSenha(aba, callback) {
-    const chave = aba || 'plano-chamada';
+function solicitarSenha(aba, callback, chavePersonalizada) {
+    const chave = chavePersonalizada || aba || 'plano-chamada';
     if (_senhaDesbloqueada[chave]) {
         if (aba) abrirAba(aba);
         else if (callback) callback();
@@ -1699,6 +1711,7 @@ function solicitarSenha(aba, callback) {
     }
     _senhaAba = aba;
     _senhaCallback = callback || null;
+    _senhaChave = chave;
     const modal = document.getElementById('modal-senha');
     document.getElementById('modal-senha-input').value = '';
     document.getElementById('modal-senha-erro').style.display = 'none';
@@ -1725,7 +1738,7 @@ async function confirmarSenha() {
         const json = await res.json();
 
         if (json.sucesso) {
-            const chave    = _senhaAba || 'plano-chamada';
+            const chave    = _senhaChave || _senhaAba || 'plano-chamada';
             const aba      = _senhaAba;
             const callback = _senhaCallback;
             _senhaDesbloqueada[chave] = true;
@@ -1752,6 +1765,7 @@ function fecharModalSenha() {
     document.getElementById('modal-senha').style.display = 'none';
     _senhaAba = null;
     _senhaCallback = null;
+    _senhaChave = null;
 }
 
 // Fechar ao clicar fora
@@ -1760,6 +1774,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === this) fecharModalSenha();
     });
 });
+
+function atualizarBotaoContatos() {
+    const btn = document.getElementById('btn-ver-contatos');
+    if (!btn) return;
+    btn.textContent = _contatosVisiveis ? 'Ocultar contatos' : 'Ver contatos';
+    btn.setAttribute('aria-pressed', _contatosVisiveis ? 'true' : 'false');
+}
+
+function alternarVisibilidadeContatos() {
+    if (_contatosVisiveis) {
+        _contatosVisiveis = false;
+        // Ao ocultar, exige a senha novamente no próximo acesso.
+        delete _senhaDesbloqueada.contatos;
+        renderQuadroDiario();
+        return;
+    }
+
+    solicitarSenha(null, () => {
+        _contatosVisiveis = true;
+        renderQuadroDiario();
+    }, 'contatos');
+}
+
+function contatoParaExibicao(contato) {
+    const valor = String(contato == null ? '' : contato).trim();
+    if (!valor || valor === '-' || valor === '—') {
+        return { texto: '—', oculto: false };
+    }
+    if (!_contatosVisiveis) {
+        return { texto: 'Contato oculto', oculto: true };
+    }
+    return { texto: valor, oculto: false };
+}
 
 /* ===================== QUADRO DIÁRIO ===================== */
 // Quadro Diário — inicializado com dados em branco por unidade (preenchido via formulário)
@@ -1781,6 +1828,7 @@ function renderQuadroDiario() {
     let totalOrd = 0, totalAc4 = 0;
     tbody.innerHTML = dadosQuadroDiario.map(row => {
         const total = row.ord + row.ac4;
+        const contatoExibido = contatoParaExibicao(row.contato);
         totalOrd += row.ord; totalAc4 += row.ac4;
         return `<tr>
             <td class="qd-td qd-td-unidade">${row.unidade}<span class="qd-data-tag">Preenchido: ${row.data}</span></td>
@@ -1788,13 +1836,14 @@ function renderQuadroDiario() {
             <td class="qd-td qd-td-num">${row.ac4}</td>
             <td class="qd-td qd-td-num qd-total">${total}</td>
             <td class="qd-td qd-vtrs">${row.vtrs || '—'}</td>
-            <td class="qd-td qd-oficial"><span class="qd-oficial-nome">${row.oficial}</span><span class="qd-oficial-tel">${row.contato}</span></td>
+            <td class="qd-td qd-oficial"><span class="qd-oficial-nome">${row.oficial}</span><span class="qd-oficial-tel${contatoExibido.oculto ? ' oculto' : ''}">${contatoExibido.texto}</span></td>
         </tr>`;
     }).join('');
 
     document.getElementById('qd-total-ord').textContent = totalOrd;
     document.getElementById('qd-total-ac4').textContent = totalAc4;
     document.getElementById('qd-total-geral').textContent = totalOrd + totalAc4;
+    atualizarBotaoContatos();
 }
 
 /* ===================== LINKS E FORMULÁRIOS ===================== */
