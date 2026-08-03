@@ -985,6 +985,36 @@
 
 <script src="config.js"></script>
 <script>
+/* ===================== CORREÇÃO DO PONTEIRO NOS GRÁFICOS ===================== */
+// A página usa zoom CSS para caber melhor na tela. Em alguns navegadores,
+// o Chart.js recebe as coordenadas do mouse antes da correção desse zoom,
+// deslocando a área ativa das colunas. Este plugin recalcula a posição do
+// ponteiro pelo retângulo visual real do canvas.
+const pluginCorrigirPonteiroGraficos = {
+    id: 'corrigirPonteiroGraficos',
+    beforeEvent(chart, args) {
+        const evento = args.event;
+        const nativo = evento && evento.native;
+        if (!evento || !nativo) return;
+
+        const ponto = (nativo.touches && nativo.touches[0]) ||
+                      (nativo.changedTouches && nativo.changedTouches[0]) ||
+                      nativo;
+        if (!Number.isFinite(ponto.clientX) || !Number.isFinite(ponto.clientY)) return;
+
+        const rect = chart.canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        evento.x = (ponto.clientX - rect.left) * (chart.width / rect.width);
+        evento.y = (ponto.clientY - rect.top) * (chart.height / rect.height);
+    }
+};
+
+Chart.register(pluginCorrigirPonteiroGraficos);
+Chart.defaults.interaction.mode = 'nearest';
+Chart.defaults.interaction.intersect = true;
+Chart.defaults.plugins.tooltip.position = 'nearest';
+
 /* ===================== DADOS ===================== */
 // unidades, coresUnidades, nomesUnidades, nomesAbrev e slugsUnidades
 // são gerados automaticamente pelo config.js a partir de CONFIG_UNIDADES
@@ -1251,12 +1281,12 @@ function iniciarAreaAtuacao() {
     window._aaPronto = true;
 
     // Calcular totais por unidade
-    const totaisPorUnidade = unidades.map(u => {
+    const totaisPorUnidade = unidades.map((u, ui) => {
         const rows = dadosAreaAtuacao[u.id] || [];
         const muns = rows.length;
         const pop  = rows.reduce((s,r) => s + normalizarPopulacao(r[2]), 0);
         const area = rows.reduce((s,r) => s + normalizarNumeroNaoNegativo(r[3]), 0);
-        return {nome: u.nome.split(' - ')[0], muns, pop, area};
+        return {nome: nomesUnidades[ui] || u.nome, muns, pop, area};
     });
 
     const totalMuns = totaisPorUnidade.reduce((s,t) => s + t.muns, 0);
@@ -1276,7 +1306,7 @@ function iniciarAreaAtuacao() {
     tbody.innerHTML = '';
     unidades.forEach((u, ui) => {
         const rows = dadosAreaAtuacao[u.id] || [];
-        const nomeUnidade = u.nome.split(' - ')[0];
+        const nomeUnidade = nomesUnidades[ui] || u.nome;
         rows.forEach((r, ri) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
