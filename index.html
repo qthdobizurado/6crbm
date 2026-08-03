@@ -959,9 +959,9 @@
                             <tfoot>
                                 <tr class="fm-total-geral">
                                     <td><strong>TOTAL</strong></td>
-                                    <td>—</td>
+                                    <td id="fm-aa-dist-tot">0</td>
                                     <td id="fm-aa-pop-tot">0</td>
-                                    <td id="fm-aa-area-tot">0</td>
+                                    <td id="fm-aa-area-tot">0,00</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -1212,6 +1212,34 @@ function normalizarPopulacao(valor) {
 
 function formatarPopulacao(valor) {
     return String(normalizarPopulacao(valor)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Converte números recebidos como number, "1234.5" ou no formato
+// brasileiro "1.234,5". O valor zero é válido e nunca é tratado como vazio.
+function normalizarNumeroNaoNegativo(valor) {
+    if (typeof valor === 'number') {
+        return Number.isFinite(valor) ? Math.max(0, valor) : 0;
+    }
+
+    const texto = String(valor ?? '').trim().replace(/\s/g, '');
+    if (texto === '') return 0;
+
+    let normalizado = texto;
+    if (/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(texto)) {
+        normalizado = texto.replace(/\./g, '').replace(',', '.');
+    } else if (/^\d+(?:,\d+)?$/.test(texto)) {
+        normalizado = texto.replace(',', '.');
+    }
+
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? Math.max(0, numero) : 0;
+}
+
+function formatarNumeroPtBr(valor, casasDecimais = 0) {
+    return normalizarNumeroNaoNegativo(valor).toLocaleString('pt-BR', {
+        minimumFractionDigits: casasDecimais,
+        maximumFractionDigits: casasDecimais
+    });
 }
 
 // Dados de área de atuação inicializados em branco por unidade
@@ -1490,9 +1518,9 @@ function gerarAreaAtuacao(id) {
             <tfoot>
                 <tr class="total-geral">
                     <td style="text-align:left;padding-left:10px"><strong>TOTAL</strong></td>
-                    <td class="num" id="u${id}-aa-dist-total">—</td>
+                    <td class="num" id="u${id}-aa-dist-total">0</td>
                     <td class="num" id="u${id}-aa-pop-total">0</td>
-                    <td class="num" id="u${id}-aa-area-total">0</td>
+                    <td class="num" id="u${id}-aa-area-total">0,00</td>
                 </tr>
             </tfoot>
         </table>
@@ -1517,25 +1545,30 @@ function calcularTotaisAA(id) {
     const cont = document.getElementById(`u${id}-c6`);
     if (!cont) return;
     const linhas = cont.querySelectorAll('tbody tr');
-    let totalPop = 0, totalArea = 0;
+    let totalDist = 0, totalPop = 0, totalArea = 0;
+
     linhas.forEach(tr => {
         const inputs = tr.querySelectorAll('input[type="number"]');
         if (inputs.length >= 3) {
-            // Tabela com inputs (modo edição)
+            // Tabela com inputs (modo edição). Zero é um valor válido.
+            totalDist += normalizarNumeroNaoNegativo(inputs[0]?.value);
             totalPop  += normalizarPopulacao(inputs[1]?.value);
-            totalArea += parseFloat(inputs[2]?.value) || 0;
+            totalArea += normalizarNumeroNaoNegativo(inputs[2]?.value);
         } else {
-            // Tabela com texto puro (dados carregados do servidor)
+            // Tabela com texto puro (dados carregados do servidor).
             const tds = tr.querySelectorAll('td');
-            // td[0]=município, td[1]=distância, td[2]=população, td[3]=área
-            const popTxt  = tds[2]?.textContent?.trim() || '0';
-            const areaTxt = tds[3]?.textContent?.replace(/\./g,'').replace(',','.').trim() || '0';
-            totalPop  += normalizarPopulacao(popTxt);
-            totalArea += parseFloat(areaTxt) || 0;
+            totalDist += normalizarNumeroNaoNegativo(tds[1]?.textContent);
+            totalPop  += normalizarPopulacao(tds[2]?.textContent);
+            totalArea += normalizarNumeroNaoNegativo(tds[3]?.textContent);
         }
     });
-    document.getElementById(`u${id}-aa-pop-total`).textContent  = formatarPopulacao(totalPop);
-    document.getElementById(`u${id}-aa-area-total`).textContent = totalArea.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    const distEl = document.getElementById(`u${id}-aa-dist-total`);
+    const popEl  = document.getElementById(`u${id}-aa-pop-total`);
+    const areaEl = document.getElementById(`u${id}-aa-area-total`);
+    if (distEl) distEl.textContent = formatarNumeroPtBr(totalDist, 0);
+    if (popEl)  popEl.textContent  = formatarPopulacao(totalPop);
+    if (areaEl) areaEl.textContent = formatarNumeroPtBr(totalArea, 2);
 }
 
 // Datas de último preenchimento — inicializadas em branco, atualizadas via formulário
@@ -2636,15 +2669,22 @@ function calcularTotaisEfetivo() {
 function calcularTotaisFormAA() {
     const tbody = document.getElementById('fm-aa-body');
     if (!tbody) return;
-    let pop=0, area=0;
+
+    let distancia = 0, pop = 0, area = 0;
     tbody.querySelectorAll('tr').forEach(tr => {
-        // input[type=number] captura apenas os 3 numéricos: [0]=Distância, [1]=População, [2]=Área
-        const cells = tr.querySelectorAll('input[type=number]');
-        pop  += parseFloat(cells[1]?.value)||0;
-        area += parseFloat(cells[2]?.value)||0;
+        // [0]=Distância, [1]=População, [2]=Área. O número 0 é válido.
+        const cells = tr.querySelectorAll('input[type="number"]');
+        distancia += normalizarNumeroNaoNegativo(cells[0]?.value);
+        pop       += normalizarPopulacao(cells[1]?.value);
+        area      += normalizarNumeroNaoNegativo(cells[2]?.value);
     });
-    document.getElementById('fm-aa-pop-tot').textContent  = formatarPopulacao(pop);
-    document.getElementById('fm-aa-area-tot').textContent = area.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const distEl = document.getElementById('fm-aa-dist-tot');
+    const popEl  = document.getElementById('fm-aa-pop-tot');
+    const areaEl = document.getElementById('fm-aa-area-tot');
+    if (distEl) distEl.textContent = formatarNumeroPtBr(distancia, 0);
+    if (popEl)  popEl.textContent  = formatarPopulacao(pop);
+    if (areaEl) areaEl.textContent = formatarNumeroPtBr(area, 2);
 }
 
 // Adiciona em cada linha um botão de remoção e uma alça para reordenação.
@@ -2686,6 +2726,17 @@ function iniciarAcoesLinhasMensal() {
                 if (node.nodeType === 1 && node.matches('tr')) prepararLinhaMensal(node);
             }));
         }).observe(tbody, { childList: true });
+
+        // Recalcula Área de Atuação instantaneamente ao digitar, apagar,
+        // colar ou usar as setas dos campos numéricos.
+        if (bodyId === 'fm-aa-body' && tbody.dataset.totaisAoDigitar !== '1') {
+            const recalcular = e => {
+                if (e.target.matches('input[type="number"]')) calcularTotaisFormAA();
+            };
+            tbody.addEventListener('input', recalcular);
+            tbody.addEventListener('change', recalcular);
+            tbody.dataset.totaisAoDigitar = '1';
+        }
 
         tbody.addEventListener('click', e => {
             const botao = e.target.closest('.fm-btn-remover');
@@ -2767,6 +2818,7 @@ function adicionarLinhaAA() {
     tr.innerHTML = '<td><input type="text" class="fm-input-cell" placeholder="Município..."></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" placeholder="0"></td><td><input type="number" class="fm-input-cell fm-num" min="0" step="0.01" placeholder="0,00"></td>';
     tbody.appendChild(tr);
     prepararLinhaMensal(tr);
+    calcularTotaisFormAA();
 }
 
 // Funções de pré-preenchimento das tabelas
@@ -2843,9 +2895,9 @@ function preencherTabelaAA(aa) {
         if (!tr) return;
         const inputs = tr.querySelectorAll('input');
         if (inputs[0]) inputs[0].value = row[0]||'';
-        if (inputs[1]) inputs[1].value = row[1]||0;
+        if (inputs[1]) inputs[1].value = normalizarNumeroNaoNegativo(row[1]);
         if (inputs[2]) inputs[2].value = normalizarPopulacao(row[2]);
-        if (inputs[3]) inputs[3].value = row[3]||0;
+        if (inputs[3]) inputs[3].value = normalizarNumeroNaoNegativo(row[3]);
     });
     calcularTotaisFormAA();
 }
@@ -2902,7 +2954,12 @@ function coletarPayloadMensal(u, uid) {
     // Área de Atuação
     const areaAtuacao = Array.from(document.querySelectorAll('#fm-aa-body tr')).map(tr => {
         const inputs = tr.querySelectorAll('input');
-        return [inputs[0]?.value||'', parseFloat(inputs[1]?.value)||0, normalizarPopulacao(inputs[2]?.value), parseFloat(inputs[3]?.value)||0];
+        return [
+            inputs[0]?.value?.trim() || '',
+            normalizarNumeroNaoNegativo(inputs[1]?.value),
+            normalizarPopulacao(inputs[2]?.value),
+            normalizarNumeroNaoNegativo(inputs[3]?.value)
+        ];
     }).filter(r => r[0]);
 
     // Contagem viaturas por status
@@ -3109,10 +3166,10 @@ function aplicarDadosMensais(registros) {
                 const aa = JSON.parse(r.AreaAtuacao);
                 const uid = idx + 1;
                 dadosAreaAtuacao[uid] = aa.map(m => [
-                    m[0] || '',
-                    parseFloat(m[1]) || 0,
+                    m[0] ?? '',
+                    normalizarNumeroNaoNegativo(m[1]),
                     normalizarPopulacao(m[2]),
-                    parseFloat(m[3]) || 0
+                    normalizarNumeroNaoNegativo(m[3])
                 ]);
             }
         } catch(e) {}
@@ -3268,7 +3325,7 @@ function atualizarAbaUnidade(idx, r) {
             const tabela = document.querySelector(`#u${uid}-c6 tbody`);
             if (tabela) {
                 tabela.innerHTML = aa.map(m =>
-                    `<tr><td>${m[0]||'—'}</td><td class="num">${m[1]||0}</td><td class="num">${formatarPopulacao(m[2])}</td><td class="num">${(m[3]||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td></tr>`
+                    `<tr><td>${m[0] || '—'}</td><td class="num">${formatarNumeroPtBr(m[1], 0)}</td><td class="num">${formatarPopulacao(m[2])}</td><td class="num">${formatarNumeroPtBr(m[3], 2)}</td></tr>`
                 ).join('') || '<tr><td colspan="4"><em>Nenhum município cadastrado</em></td></tr>';
                 calcularTotaisAA(uid);
             }
@@ -3277,6 +3334,14 @@ function atualizarAbaUnidade(idx, r) {
 }
 
 /* ===================== INIT ===================== */
+document.addEventListener('input', function(e) {
+    const campo = e.target.closest('.aa-input-num');
+    if (!campo) return;
+    const painel = campo.closest('[id^="u"][id$="-c6"]');
+    const id = painel?.id.match(/^u(\d+)-c6$/)?.[1];
+    if (id) calcularTotaisAA(id);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Aplicar configurações do config.js
     const titulo     = (typeof TITULO_COMANDO !== 'undefined') ? TITULO_COMANDO : '6° COMANDO REGIONAL';
