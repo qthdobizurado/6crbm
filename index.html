@@ -113,21 +113,28 @@
         .mini-graficos-section .card-header{background:var(--amarelo);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
         .mini-graficos-section .card-header span{font-weight:700;text-transform:uppercase;font-size:1rem}
         .mini-graficos-legenda{display:flex;flex-wrap:wrap;gap:10px;padding:12px 18px;background:#f8f9fa;border-bottom:2px solid #000}
-        .mini-graficos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:0;padding:0}
-        .mini-card{border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:10px 12px 8px;background:#fff;transition:background .2s}
-        .mini-card:hover{background:#fffbea}
+        .mini-graficos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--mini-card-min-width,300px),1fr));gap:0;padding:0;min-width:100%}
+        .mini-card{border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:10px 12px 8px;background:#fff;transition:background .2s;position:relative;overflow:visible}
+        .mini-card:hover{background:#fffbea;z-index:3}
         .mini-card-titulo{display:flex;align-items:center;gap:6px;margin-bottom:6px}
         .mini-abrev{background:var(--vermelho);color:#fff;font-weight:700;font-size:.62rem;padding:2px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0}
         .mini-nome{font-size:.68rem;color:#555;line-height:1.2;font-weight:500;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
         .mini-total-badge{text-align:center;font-size:.7rem;color:var(--cinza);margin-top:5px;padding-top:4px;border-top:1px dashed #ddd}
         .mini-total-badge strong{color:var(--vermelho-esc);font-size:.8rem}
-        .mini-barras{display:flex;align-items:stretch;gap:3px;height:95px;padding-top:4px}
-        .mini-barra-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:0}
-        .mini-barra-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;width:100%;overflow:hidden}
-        .mini-barra-bg{width:100%;background:#f0f0f0;border-radius:2px 2px 0 0;overflow:hidden;display:flex;align-items:flex-end}
+        .mini-barras{display:grid;grid-template-columns:repeat(var(--mini-unit-count,1),minmax(42px,1fr));align-items:stretch;column-gap:4px;height:112px;padding-top:4px;min-width:var(--mini-bars-min-width,0)}
+        .mini-barra-wrap{min-width:0;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;cursor:help;outline:none}
+        .mini-barra-wrap::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% - 30px);transform:translateX(-50%) translateY(4px);background:rgba(20,20,20,.96);color:#fff;border:1px solid #000;border-radius:5px;padding:6px 8px;font-size:.66rem;font-weight:600;line-height:1.25;white-space:pre-line;text-align:left;min-width:130px;max-width:230px;box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;z-index:30;transition:opacity .12s ease,transform .12s ease}
+        .mini-barra-wrap:hover::after,.mini-barra-wrap:focus-visible::after{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+        .mini-barra-primeira::after{left:0;transform:translateX(0) translateY(4px)}
+        .mini-barra-primeira:hover::after,.mini-barra-primeira:focus-visible::after{transform:translateX(0) translateY(0)}
+        .mini-barra-ultima::after{left:auto;right:0;transform:translateX(0) translateY(4px)}
+        .mini-barra-ultima:hover::after,.mini-barra-ultima:focus-visible::after{transform:translateX(0) translateY(0)}
+        .mini-barra-area{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;width:100%;overflow:visible}
+        .mini-barra-bg{width:min(100%,30px);background:#f0f0f0;border-radius:2px 2px 0 0;overflow:hidden;display:flex;align-items:flex-end;transition:filter .12s ease,outline-color .12s ease}
+        .mini-barra-wrap:hover .mini-barra-bg,.mini-barra-wrap:focus-visible .mini-barra-bg{filter:brightness(1.08);outline:2px solid rgba(0,0,0,.28);outline-offset:1px}
         .mini-barra-fill{width:100%;border-radius:2px 2px 0 0;transition:height .4s ease;min-height:2px}
-        .mini-barra-val{font-size:.6rem;font-weight:700;color:#333;text-align:center;line-height:1;margin-top:2px;height:10px;flex-shrink:0}
-        .mini-barra-label{font-size:.55rem;color:#777;text-align:center;line-height:1;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;height:10px;flex-shrink:0;margin-top:2px}
+        .mini-barra-val{font-size:.62rem;font-weight:700;color:#333;text-align:center;line-height:1;margin-top:2px;height:10px;flex-shrink:0}
+        .mini-barra-label{font-size:.56rem;color:#666;text-align:center;line-height:1.05;width:100%;min-height:22px;flex-shrink:0;margin-top:3px;white-space:normal;overflow-wrap:anywhere;display:flex;align-items:flex-start;justify-content:center}
 
         /* ===== LEGENDA ===== */
         .legenda-grafico{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:.8rem}
@@ -1082,6 +1089,14 @@ function navegarDashboard(dir) {
 }
 
 /* ===================== MINI GRÁFICOS ===================== */
+function escaparAtributoHTML(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function criarMiniGraficos() {
     const legEl = document.getElementById('miniLegenda');
     legEl.innerHTML = nomesUnidades.map((n,i) =>
@@ -1091,21 +1106,32 @@ function criarMiniGraficos() {
     const grid = document.getElementById('miniGraficosGrid');
     grid.innerHTML = '';
 
+    // Cada unidade recebe largura mínima própria. Assim, adicionar novas
+    // unidades no config.js não comprime nem corta as últimas colunas.
+    const quantidadeUnidades = Math.max(nomesUnidades.length, 1);
+    const larguraPorUnidade = 48;
+    const larguraMinimaCard = Math.max(300, quantidadeUnidades * larguraPorUnidade + 28);
+    grid.style.setProperty('--mini-unit-count', quantidadeUnidades);
+    grid.style.setProperty('--mini-bars-min-width', `${quantidadeUnidades * larguraPorUnidade}px`);
+    grid.style.setProperty('--mini-card-min-width', `${larguraMinimaCard}px`);
+
     cursosEsp.forEach((curso, ci) => {
         const valores = dadosEsp[ci];
         const maxVal  = Math.max(...valores, 1);
         const total   = valores.reduce((a,b) => a+b, 0);
         const barrasHTML = valores.map((v, ui) => {
             const pct = Math.round((v / maxVal) * 100);
+            const nomeUnidade = nomesUnidades[ui] || unidades[ui]?.nome || `Unidade ${ui + 1}`;
+            const tooltip = `${nomeUnidade} • Quantidade: ${v}`;
             return `
-            <div class="mini-barra-wrap">
+            <div class="mini-barra-wrap${ui === 0 ? ' mini-barra-primeira' : ''}${ui === valores.length - 1 ? ' mini-barra-ultima' : ''}" tabindex="0" data-tooltip="${escaparAtributoHTML(tooltip)}" aria-label="${escaparAtributoHTML(`${curso.nome}. ${nomeUnidade}: ${v}`)}">
                 <div class="mini-barra-area">
-                    <div class="mini-barra-bg" style="height:${Math.max(pct * 0.56, v > 0 ? 4 : 0)}px;min-height:${v>0?'4px':'0'}">
+                    <div class="mini-barra-bg" style="height:${Math.max(pct * 0.64, v > 0 ? 4 : 0)}px;min-height:${v>0?'4px':'0'}">
                         <div class="mini-barra-fill" style="height:100%;background:${coresUnidades[ui]}"></div>
                     </div>
                 </div>
-                <div class="mini-barra-val" style="color:${v===0?'#ccc':coresUnidades[ui]}">${v===0?'—':v}</div>
-                <div class="mini-barra-label" title="${nomesUnidades[ui]}">${nomesAbrev[ui]}</div>
+                <div class="mini-barra-val" style="color:${v===0?'#bbb':coresUnidades[ui]}">${v===0?'—':v}</div>
+                <div class="mini-barra-label" title="${escaparAtributoHTML(unidades[ui]?.nome || nomeUnidade)}">${nomeUnidade}</div>
             </div>`;
         }).join('');
         const card = document.createElement('div');
@@ -1130,7 +1156,7 @@ function iniciarEspecialistas() {
     const totalGeral = totaisPorUnidade.reduce((a,b) => a+b, 0);
     let resumoHtml = `<div class="esp-resumo-card"><span class="rotulo">TOTAL DE CURSOS</span><span class="numero">${totalGeral}</span><span style="font-size:.75rem;opacity:.8">CURSOS</span></div>`;
     nomesUnidades.forEach((n,i) => {
-        resumoHtml += `<div class="esp-resumo-card"><span class="rotulo">${nomesAbrev[i]}</span><span class="numero">${totaisPorUnidade[i]}</span><span style="font-size:.75rem;opacity:.8">CURSOS</span></div>`;
+        resumoHtml += `<div class="esp-resumo-card"><span class="rotulo">${nomesUnidades[i]}</span><span class="numero">${totaisPorUnidade[i]}</span><span style="font-size:.75rem;opacity:.8">CURSOS</span></div>`;
     });
     document.getElementById('esp-resumo').innerHTML = resumoHtml;
     criarMiniGraficos();
