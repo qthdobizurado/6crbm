@@ -446,8 +446,8 @@
 <div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:12px;padding:32px 28px;max-width:360px;width:90%;border-top:6px solid var(--vermelho);box-shadow:0 8px 32px rgba(0,0,0,.3);text-align:center">
         <div style="font-size:2rem;margin-bottom:8px">🔒</div>
-        <h3 style="color:var(--vermelho);text-transform:uppercase;font-size:1rem;margin-bottom:6px">Acesso Restrito</h3>
-        <p id="modal-senha-descricao" style="font-size:.82rem;color:#666;margin-bottom:18px">Digite a senha para continuar</p>
+        <h3 style="color:var(--vermelho);text-transform:uppercase;font-size:1rem;margin-bottom:6px">Visualização Restrita</h3>
+        <p id="modal-senha-descricao" style="font-size:.82rem;color:#666;margin-bottom:18px">Digite a senha para carregar esta informação</p>
         <input type="password" id="modal-senha-input"
             style="width:100%;padding:10px 14px;border:2px solid #ddd;border-radius:8px;font-size:1rem;text-align:center;letter-spacing:4px;margin-bottom:10px;outline:none;transition:border .2s"
             placeholder="••••••••"
@@ -455,7 +455,7 @@
         <p id="modal-senha-erro" style="display:none;color:var(--vermelho);font-size:.8rem;font-weight:700;margin-bottom:8px">❌ Senha incorreta!</p>
         <div style="display:flex;gap:10px;margin-top:4px">
             <button onclick="fecharModalSenha()" style="flex:1;padding:10px;border:2px solid #ccc;border-radius:8px;background:#f1f1f1;cursor:pointer;font-weight:600;font-size:.85rem;text-transform:uppercase">Cancelar</button>
-            <button onclick="confirmarSenha()" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--vermelho);color:#fff;cursor:pointer;font-weight:700;font-size:.85rem;text-transform:uppercase">Entrar</button>
+            <button onclick="confirmarSenha()" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--vermelho);color:#fff;cursor:pointer;font-weight:700;font-size:.85rem;text-transform:uppercase">Confirmar</button>
         </div>
     </div>
 </div>
@@ -771,7 +771,8 @@
                         </div>
                         <div class="form-grupo">
                             <label class="form-label">Contato</label>
-                            <input type="text" id="fd-contato" class="form-input" placeholder="(62) 9xxxx-xxxx">
+                            <input type="text" id="fd-contato" class="form-input" placeholder="Digite apenas para alterar o contato atual">
+                            <small style="display:block;color:#6c757d;margin-top:4px">O contato existente não é baixado neste formulário. Se deixar em branco, ele será preservado.</small>
                         </div>
                     </div>
                     <div class="form-grupo" style="margin-top:12px">
@@ -927,7 +928,7 @@
 
                     <!-- ABA 5: PLANO DE CHAMADA -->
                     <div class="fm-tab-conteudo" id="fm-tab-5">
-                        <p class="fm-tab-desc">Informe os dados dos militares para o Plano de Chamada da unidade.</p>
+                        <p class="fm-tab-desc">Por segurança, o plano existente não é baixado neste formulário. Preencha esta seção somente para substituí-lo; se não alterar, o servidor preservará os dados atuais.</p>
                         <div style="overflow-x:auto">
                         <table class="fm-tabela" id="fm-tabela-pc">
                             <thead>
@@ -1761,6 +1762,59 @@ let _senhaChave = null;
 // Sessões desbloqueadas (por aba/tipo) para não pedir toda hora
 const _senhaDesbloqueada = {};
 let _contatosVisiveis = false;
+const _dadosProtegidos = {
+    contatos: new Map(),
+    planosChamada: new Map()
+};
+
+function aplicarContatosProtegidos(registros) {
+    _dadosProtegidos.contatos.clear();
+
+    (registros || []).forEach(registro => {
+        const chave = String(registro.unidadeId);
+        const contato = registro.contato || '—';
+        _dadosProtegidos.contatos.set(chave, contato);
+
+        const idx = unidades.findIndex(u => String(u.id) === chave);
+        if (idx >= 0) dadosQuadroDiario[idx].contato = contato;
+    });
+}
+
+function aplicarPlanosChamadaProtegidos(registros) {
+    _dadosProtegidos.planosChamada.clear();
+
+    (registros || []).forEach(registro => {
+        const uid = String(registro.UnidadeId);
+        const valor = registro.PlanoChamada || '[]';
+        _dadosProtegidos.planosChamada.set(uid, valor);
+
+        let linhas = [];
+        try { linhas = JSON.parse(valor); } catch (erro) {}
+
+        const tabela = document.querySelector(`#u${uid}-c5 tbody`);
+        if (!tabela) return;
+
+        tabela.innerHTML = linhas.map(item =>
+            `<tr><td>${item[0]||'—'}</td><td>${item[1]||'—'}</td><td>${item[2]||'—'}</td><td>${item[3]||'—'}</td></tr>`
+        ).join('') || '<tr><td colspan="4"><em>Nenhum dado cadastrado</em></td></tr>';
+    });
+}
+
+function aplicarDadosProtegidos(escopo, dados) {
+    if (escopo === 'contatos') {
+        aplicarContatosProtegidos(dados?.contatos || []);
+        return;
+    }
+
+    if (escopo === 'plano-chamada') {
+        aplicarPlanosChamadaProtegidos(dados?.planosChamada || []);
+        return;
+    }
+
+    if (escopo === 'links' || escopo === 'links-diario') {
+        gerarLinksUI();
+    }
+}
 
 function solicitarSenha(aba, callback, chavePersonalizada) {
     const chave = chavePersonalizada || aba || 'plano-chamada';
@@ -1780,41 +1834,46 @@ function solicitarSenha(aba, callback, chavePersonalizada) {
 }
 
 async function confirmarSenha() {
-    const input  = document.getElementById('modal-senha-input').value.trim();
+    const input  = document.getElementById('modal-senha-input').value;
     const btnOk  = document.querySelector('#modal-senha button[onclick="confirmarSenha()"]');
     const erro   = document.getElementById('modal-senha-erro');
     const inp    = document.getElementById('modal-senha-input');
 
     if (!input) { inp.focus(); return; }
 
-    // Desabilita o botao enquanto aguarda resposta do servidor
-    if (btnOk) { btnOk.disabled = true; btnOk.textContent = 'Verificando...'; }
+    if (btnOk) { btnOk.disabled = true; btnOk.textContent = 'Carregando...'; }
     erro.style.display = 'none';
 
     try {
-        // Validacao ocorre no servidor — a senha nunca fica exposta no front-end
-        const url = SCRIPT_URL + '?acao=verificarSenha&senha=' + encodeURIComponent(input);
-        const res  = await fetch(url);
-        const json = await res.json();
+        const escopo = _senhaChave || _senhaAba || 'plano-chamada';
+        const json = await chamarAppsScript({
+            acao: 'buscarDadosProtegidos',
+            escopo,
+            senha: input
+        });
+
+        // Remove a senha do campo assim que a resposta chega.
+        inp.value = '';
 
         if (json.sucesso) {
-            const chave    = _senhaChave || _senhaAba || 'plano-chamada';
+            aplicarDadosProtegidos(escopo, json.dados || {});
+
             const aba      = _senhaAba;
             const callback = _senhaCallback;
-            _senhaDesbloqueada[chave] = true;
+            _senhaDesbloqueada[escopo] = true;
             fecharModalSenha();
+
             if (aba) abrirAba(aba);
             else if (callback) callback();
         } else {
-            erro.textContent = '❌ Senha incorreta!';
+            erro.textContent = json.mensagem || '❌ Senha incorreta!';
             erro.style.display = 'block';
-            inp.value = '';
             inp.style.border = '2px solid var(--vermelho)';
             inp.focus();
             setTimeout(() => { inp.style.border = '2px solid #ddd'; }, 1500);
         }
     } catch (e) {
-        erro.textContent = '⚠️ Erro de conexão. Tente novamente.';
+        erro.textContent = '⚠️ ' + (e.message || 'Erro de conexão. Tente novamente.');
         erro.style.display = 'block';
     } finally {
         if (btnOk) { btnOk.disabled = false; btnOk.textContent = 'Confirmar'; }
@@ -1845,8 +1904,11 @@ function atualizarBotaoContatos() {
 function alternarVisibilidadeContatos() {
     if (_contatosVisiveis) {
         _contatosVisiveis = false;
-        // Ao ocultar, exige a senha novamente no próximo acesso.
+        // Ao ocultar, remove os contatos da memória usada pelo painel e
+        // exige a senha novamente no próximo acesso.
         delete _senhaDesbloqueada.contatos;
+        _dadosProtegidos.contatos.clear();
+        dadosQuadroDiario.forEach(item => { item.contato = '—'; });
         renderQuadroDiario();
         return;
     }
@@ -2008,159 +2070,133 @@ async function verificarURLParams() {
     }
 }
 
-/* ===================== LEITURA DIRETA DA PLANILHA ===================== */
+/* ===================== LEITURA PELA API DO APPS SCRIPT ===================== */
 
 let _cargaPainelEmAndamento = null;
 
-function obterConfiguracaoPlanilhaDashboard() {
-    const id = (typeof PLANILHA_DASHBOARD_ID !== 'undefined')
-        ? String(PLANILHA_DASHBOARD_ID || '').trim()
+function _campoOculto(form, nome, valor) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = nome;
+    input.value = valor;
+    form.appendChild(input);
+}
+
+function _origemGoogleValida(origem) {
+    try {
+        const host = new URL(origem).hostname.toLowerCase();
+        return host === 'script.google.com' ||
+            host.endsWith('.googleusercontent.com') ||
+            host === 'googleusercontent.com';
+    } catch (erro) {
+        return false;
+    }
+}
+
+function chamarAppsScript(payload, opcoes = {}) {
+    const timeoutMs = opcoes.timeoutMs ||
+        ((typeof API_TIMEOUT_MS !== 'undefined' && API_TIMEOUT_MS) ? API_TIMEOUT_MS : 20000);
+    const endpoint = (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL)
+        ? SCRIPT_URL
         : '';
-    const aba = (typeof ABA_API_DASHBOARD !== 'undefined')
-        ? String(ABA_API_DASHBOARD || 'API_DASHBOARD').trim()
-        : 'API_DASHBOARD';
-    return { id, aba };
-}
 
-function montarUrlApiDashboard() {
-    const { id, aba } = obterConfiguracaoPlanilhaDashboard();
-    if (!id) throw new Error('PLANILHA_DASHBOARD_ID não configurado no config.js.');
+    if (!endpoint || !/^https:\/\/script\.google\.com\//i.test(endpoint)) {
+        return Promise.reject(new Error('Configure SCRIPT_URL no arquivo config.js.'));
+    }
 
-    return `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}` +
-        `/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(aba)}` +
-        `&tq=${encodeURIComponent('select *')}&_=${Date.now()}`;
-}
+    return new Promise((resolve, reject) => {
+        const id = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const iframe = document.createElement('iframe');
+        const form = document.createElement('form');
+        let encerrado = false;
 
-function interpretarCsv(texto) {
-    const linhas = [];
-    let linha = [];
-    let campo = '';
-    let entreAspas = false;
+        iframe.name = 'gas_' + id;
+        iframe.style.display = 'none';
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.title = 'Comunicação com o servidor';
 
-    for (let i = 0; i < texto.length; i++) {
-        const ch = texto[i];
+        form.method = 'POST';
+        form.action = endpoint;
+        form.target = iframe.name;
+        form.acceptCharset = 'UTF-8';
+        form.style.display = 'none';
 
-        if (ch === '"') {
-            if (entreAspas && texto[i + 1] === '"') {
-                campo += '"';
-                i++;
-            } else {
-                entreAspas = !entreAspas;
+        _campoOculto(form, 'modo', 'iframe');
+        _campoOculto(form, 'id', id);
+        _campoOculto(form, 'origem', window.location.origin);
+        _campoOculto(form, 'payload', JSON.stringify(payload || {}));
+
+        const limpar = () => {
+            if (encerrado) return;
+            encerrado = true;
+            clearTimeout(timer);
+            window.removeEventListener('message', receber);
+            form.remove();
+            setTimeout(() => iframe.remove(), 0);
+        };
+
+        const receber = event => {
+            if (!_origemGoogleValida(event.origin)) return;
+            const mensagem = event.data;
+            if (!mensagem || mensagem.canal !== '6crbm-apps-script' || mensagem.id !== id) return;
+
+            limpar();
+            if (mensagem.erroTransporte) {
+                reject(new Error(mensagem.erroTransporte));
+                return;
             }
-        } else if (ch === ',' && !entreAspas) {
-            linha.push(campo);
-            campo = '';
-        } else if ((ch === '\n' || ch === '\r') && !entreAspas) {
-            if (ch === '\r' && texto[i + 1] === '\n') i++;
-            linha.push(campo);
-            if (linha.some(valor => valor !== '')) linhas.push(linha);
-            linha = [];
-            campo = '';
-        } else {
-            campo += ch;
-        }
-    }
+            resolve(mensagem.resposta || {
+                sucesso: false,
+                mensagem: 'O servidor retornou uma resposta vazia.'
+            });
+        };
 
-    linha.push(campo);
-    if (linha.some(valor => valor !== '')) linhas.push(linha);
-    return linhas;
-}
+        const timer = setTimeout(() => {
+            limpar();
+            reject(new Error('Tempo de conexão esgotado. Confira a implantação do Apps Script.'));
+        }, timeoutMs);
 
-function montarSnapshotDaApi(textoCsv) {
-    const texto = String(textoCsv || '').trim();
-    if (!texto) throw new Error('A aba API_DASHBOARD retornou conteúdo vazio.');
-    if (/^\s*</.test(texto)) {
-        throw new Error('A planilha não está acessível publicamente ou retornou uma página HTML.');
-    }
+        window.addEventListener('message', receber);
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
 
-    const linhas = interpretarCsv(texto);
-    if (linhas.length < 2) {
-        throw new Error('A aba API_DASHBOARD ainda não possui dados. Execute configurarProjeto() no Apps Script.');
-    }
-
-    const cabecalho = linhas[0].map(v => String(v || '').trim());
-    const idxTipo = cabecalho.indexOf('Tipo');
-    const idxUid = cabecalho.indexOf('UnidadeId');
-    const idxAtualizado = cabecalho.indexOf('AtualizadoEm');
-    const idxJson = cabecalho.indexOf('DadosJson');
-
-    if ([idxTipo, idxUid, idxAtualizado, idxJson].some(i => i < 0)) {
-        throw new Error('Cabeçalho inválido na aba API_DASHBOARD.');
-    }
-
-    const snapshot = {
-        versao: 1,
-        atualizadoEm: '',
-        diario: [],
-        mensal: []
-    };
-
-    for (let i = 1; i < linhas.length; i++) {
-        const cols = linhas[i];
-        const tipo = String(cols[idxTipo] || '').trim().toLowerCase();
-        const atualizadoEm = String(cols[idxAtualizado] || '').trim();
-        const dadosJson = String(cols[idxJson] || '').trim();
-        if (!tipo || !dadosJson) continue;
-
-        let dados;
         try {
-            dados = JSON.parse(dadosJson);
+            form.submit();
         } catch (erro) {
-            throw new Error(`JSON inválido na linha ${i + 1} da API_DASHBOARD.`);
+            limpar();
+            reject(new Error('Não foi possível enviar a solicitação ao Apps Script.'));
         }
-
-        if (tipo === 'meta') {
-            snapshot.atualizadoEm = dados.atualizadoEm || atualizadoEm || snapshot.atualizadoEm;
-            snapshot.versao = dados.versao || snapshot.versao;
-        } else if (tipo === 'diario') {
-            snapshot.diario.push(dados);
-        } else if (tipo === 'mensal') {
-            snapshot.mensal.push(dados);
-        }
-    }
-
-    if (!snapshot.atualizadoEm) {
-        snapshot.atualizadoEm = linhas[1]?.[idxAtualizado] || '';
-    }
-
-    return snapshot;
+    });
 }
 
 async function buscarSnapshotDireto(opcoes = {}) {
     const tentativas = opcoes.tentativas || 2;
-    const timeoutMs = opcoes.timeoutMs || 12000;
     let ultimoErro;
 
     for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
         try {
-            const resposta = await fetch(montarUrlApiDashboard(), {
-                method: 'GET',
-                mode: 'cors',
-                credentials: 'omit',
-                redirect: 'follow',
-                cache: 'no-store',
-                signal: ctrl.signal
-            });
-            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-            const texto = await resposta.text();
-            return montarSnapshotDaApi(texto);
+            const resposta = await chamarAppsScript(
+                { acao: 'buscarDadosPublicos' },
+                { timeoutMs: opcoes.timeoutMs || 15000 }
+            );
+
+            if (!resposta.sucesso || !resposta.snapshot) {
+                throw new Error(resposta.mensagem || 'Não foi possível carregar os dados públicos.');
+            }
+
+            return resposta.snapshot;
         } catch (erro) {
             ultimoErro = erro;
             if (tentativa < tentativas) {
                 await new Promise(resolve => setTimeout(resolve, 700 * tentativa));
             }
-        } finally {
-            clearTimeout(timer);
         }
     }
 
-    throw ultimoErro || new Error('Falha ao ler a planilha.');
+    throw ultimoErro || new Error('Falha ao consultar o Apps Script.');
 }
 
 async function obterSnapshotDashboard(opcoes = {}) {
-    // Sempre consulta a aba API_DASHBOARD. Nenhum resultado é salvo no navegador.
     return buscarSnapshotDireto(opcoes);
 }
 
@@ -2175,6 +2211,8 @@ function mostrarStatusCarregamento(tipo, msg, cor) {
 }
 
 async function preencherFormularioDiario(uid) {
+    const wrapper = document.getElementById('form-diario-wrapper');
+    if (wrapper) wrapper.dataset.preservarContato = 'true';
     mostrarStatusCarregamento('diario', '🔄 Buscando último preenchimento...', '#1e5fa5');
 
     try {
@@ -2195,7 +2233,6 @@ async function preencherFormularioDiario(uid) {
         set('fd-ac4',     r.efetivoAc4);
         set('fd-total',   r.efetivoTotal);
         set('fd-oficial', r.oficial !== '-' ? r.oficial : '');
-        set('fd-contato', r.contato !== '-' ? r.contato : '');
         set('fd-vtrs',    r.vtrs    !== '-' ? r.vtrs    : '');
 
         const dataRef = r.timestamp ? ` (ref: ${r.timestamp})` : '';
@@ -2204,11 +2241,13 @@ async function preencherFormularioDiario(uid) {
             '#856404'
         );
     } catch(e) {
-        mostrarStatusCarregamento('diario', '⚠️ Não foi possível ler a aba API_DASHBOARD.', '#6c757d');
+        mostrarStatusCarregamento('diario', '⚠️ Não foi possível consultar o Apps Script.', '#6c757d');
     }
 }
 
 async function preencherFormularioMensal(uid) {
+    const wrapper = document.getElementById('form-mensal-wrapper');
+    if (wrapper) wrapper.dataset.preservarPlanoChamada = 'true';
     mostrarStatusCarregamento('mensal', '🔄 Buscando último preenchimento...', '#1e5fa5');
 
     try {
@@ -2242,9 +2281,6 @@ async function preencherFormularioMensal(uid) {
         if (r.Materiais) {
             try { preencherTabelaMat(JSON.parse(r.Materiais)); } catch(e) {}
         }
-        if (r.PlanoChamada) {
-            try { preencherTabelaPC(JSON.parse(r.PlanoChamada)); } catch(e) {}
-        }
         if (r.AreaAtuacao) {
             try { preencherTabelaAA(JSON.parse(r.AreaAtuacao)); } catch(e) {}
         }
@@ -2255,7 +2291,7 @@ async function preencherFormularioMensal(uid) {
             '#856404'
         );
     } catch(e) {
-        mostrarStatusCarregamento('mensal', '⚠️ Não foi possível ler a aba API_DASHBOARD.', '#6c757d');
+        mostrarStatusCarregamento('mensal', '⚠️ Não foi possível consultar o Apps Script.', '#6c757d');
     }
 }
 
@@ -2275,68 +2311,36 @@ async function enviarDiario() {
         efetivoTotal: document.getElementById('fd-total').value || 0,
         oficial: document.getElementById('fd-oficial').value || '-',
         contato: document.getElementById('fd-contato').value || '-',
+        preservarContato: document.getElementById('form-diario-wrapper').dataset.preservarContato === 'true',
         vtrs: document.getElementById('fd-vtrs').value || '-'
     };
 
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    await enviarViaForm(SCRIPT_URL_DIARIO, payload, btn, sta,
+    await enviarViaForm(payload, btn, sta,
         (typeof NOME_CURTO !== 'undefined' ? NOME_CURTO : '6º CRBM'));
 }
 
 /* ===================== ENVIO VIA POST ===================== */
-async function aguardarConfirmacaoEnvio(payload) {
-    const campoTimestamp = payload.tipo === 'diario' ? 'timestamp' : 'Timestamp';
-
-    for (let tentativa = 1; tentativa <= 5; tentativa++) {
-        await new Promise(resolve => setTimeout(resolve, tentativa === 1 ? 700 : 1200));
-        try {
-            const snapshot = await buscarSnapshotDireto({ tentativas: 1, timeoutMs: 10000 });
-            const lista = payload.tipo === 'diario' ? snapshot.diario : snapshot.mensal;
-            const registro = lista.find(item => {
-                const uid = payload.tipo === 'diario' ? item.unidadeId : item.UnidadeId;
-                return String(uid) === String(payload.unidadeId);
-            });
-
-            if (!registro) continue;
-            const timestampRegistro = String(registro[campoTimestamp] || '');
-            if (!payload.timestamp || timestampRegistro === String(payload.timestamp)) {
-                return snapshot;
-            }
-        } catch (erro) {}
-    }
-
-    return null;
-}
-
-async function enviarViaForm(url, payload, btn, sta, nomeCurto) {
+async function enviarViaForm(payload, btn, sta, nomeCurto) {
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5';
     sta.textContent = 'Enviando dados...';
 
     try {
-        // O Apps Script recebe e grava os dados. O dashboard não usa esta rota para leitura.
-        await fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(payload)
-        });
+        const resposta = await chamarAppsScript(payload, { timeoutMs: 30000 });
 
-        sta.textContent = 'Atualizando a planilha...';
-        const snapshotConfirmado = await aguardarConfirmacaoEnvio(payload);
-
-        if (snapshotConfirmado) {
-            sta.style.color = 'var(--verde)';
-            sta.textContent = '✅ Dados enviados e painel atualizado! Você pode alterar e enviar novamente.';
-        } else {
-            // O POST pode ter sido concluído, mas a publicação da planilha ainda não propagou.
-            sta.style.color = '#856404';
-            sta.textContent = '✅ Envio concluído. A atualização do painel pode levar alguns segundos.';
+        if (!resposta.sucesso) {
+            throw new Error(resposta.mensagem || 'O servidor recusou o envio.');
         }
 
+        sta.textContent = 'Atualizando o painel...';
+        await carregarDadosDoPainel();
+
+        sta.style.color = 'var(--verde)';
+        sta.textContent = '✅ Dados enviados e painel atualizado! Você pode alterar e enviar novamente.';
         btn.disabled = false;
         btn.textContent = '📤 Enviar novamente ao ' + (nomeCurto || '6º CRBM');
     } catch(e) {
@@ -3084,6 +3088,8 @@ function adicionarLinhaEmb() {
 }
 
 function adicionarLinhaPC() {
+    const wrapper = document.getElementById('form-mensal-wrapper');
+    if (wrapper) wrapper.dataset.preservarPlanoChamada = 'false';
     const tbody = document.getElementById('fm-pc-body');
     const tr = document.createElement('tr');
     tr.innerHTML = '<td><textarea class="fm-input-cell fm-pc-nome" rows="1" placeholder="Nome..." style="resize:none;overflow:hidden"></textarea></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td><td><input type="text" class="fm-input-cell"></td>';
@@ -3276,6 +3282,7 @@ function coletarPayloadMensal(u, uid) {
         embarcacoes:   JSON.stringify(embarcacoes),
         materiais:     JSON.stringify(materiais),
         planoChamada:  JSON.stringify(planoChamada),
+        preservarPlanoChamada: document.getElementById('form-mensal-wrapper').dataset.preservarPlanoChamada === 'true',
         areaAtuacao:   JSON.stringify(areaAtuacao)
     };
 }
@@ -3292,7 +3299,7 @@ async function enviarMensal() {
     btn.disabled = true; btn.textContent = '⏳ Enviando...';
     sta.style.color = '#1e5fa5'; sta.textContent = 'Conectando ao servidor...';
 
-    await enviarViaForm(SCRIPT_URL_MENSAL, payload, btn, sta, nomeCurto);
+    await enviarViaForm(payload, btn, sta, nomeCurto);
 }
 
 /* ===================== CARREGAR DADOS DO PAINEL ===================== */
@@ -3357,19 +3364,13 @@ async function carregarDadosDoPainel() {
 
     _cargaPainelEmAndamento = (async () => {
         const elTs = document.getElementById('quadro-data-hora');
-        const { id } = obterConfiguracaoPlanilhaDashboard();
-
-        if (!id) {
-            if (elTs) elTs.textContent = 'ID da planilha não configurado no config.js.';
-            return;
-        }
 
         if (elTs) {
-            elTs.textContent = 'Lendo informações atualizadas diretamente da planilha...';
+            elTs.textContent = 'Lendo informações da planilha privada pelo Apps Script...';
         }
 
         try {
-            const snapshotNovo = await buscarSnapshotDireto({ tentativas: 2, timeoutMs: 12000 });
+            const snapshotNovo = await buscarSnapshotDireto({ tentativas: 2, timeoutMs: 15000 });
             aplicarSnapshotNoPainel(snapshotNovo);
             window._falhasLeituraPlanilha = 0;
             clearTimeout(window._retryCarregarPainel);
@@ -3382,10 +3383,9 @@ async function carregarDadosDoPainel() {
             window._falhasLeituraPlanilha = (window._falhasLeituraPlanilha || 0) + 1;
 
             if (elTs) {
-                elTs.textContent = 'Não foi possível obter dados atualizados da aba API_DASHBOARD: ' + erro.message;
+                elTs.textContent = 'Não foi possível obter os dados pelo Apps Script: ' + erro.message;
             }
 
-            // Faz somente uma nova tentativa automática, evitando tempestade de requisições.
             if (window._falhasLeituraPlanilha <= 1) {
                 clearTimeout(window._retryCarregarPainel);
                 window._retryCarregarPainel = setTimeout(() => {
@@ -3417,7 +3417,7 @@ function aplicarDadosDiarios(registros) {
             ac4:     parseInt(r.efetivoAc4)   || 0,
             vtrs:    r.vtrs    || '—',
             oficial: r.oficial || 'Aguardando...',
-            contato: r.contato || '—'
+            contato: _dadosProtegidos.contatos.get(String(r.unidadeId)) || '—'
         };
     });
 }
@@ -3702,6 +3702,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Campos protegidos não são pré-carregados nos formulários públicos.
+    // Se o usuário alterar esses campos, o servidor passa a aceitar o novo valor;
+    // caso contrário, mantém o valor privado já existente na planilha.
+    const contatoDiario = document.getElementById('fd-contato');
+    if (contatoDiario) {
+        contatoDiario.addEventListener('input', () => {
+            const wrapper = document.getElementById('form-diario-wrapper');
+            if (wrapper) wrapper.dataset.preservarContato = 'false';
+        });
+    }
+
+    const corpoPlano = document.getElementById('fm-pc-body');
+    if (corpoPlano) {
+        const marcarPlanoAlterado = () => {
+            const wrapper = document.getElementById('form-mensal-wrapper');
+            if (wrapper) wrapper.dataset.preservarPlanoChamada = 'false';
+        };
+        corpoPlano.addEventListener('input', marcarPlanoAlterado);
+        corpoPlano.addEventListener('change', marcarPlanoAlterado);
+        corpoPlano.addEventListener('paste', marcarPlanoAlterado);
+        corpoPlano.addEventListener('click', event => {
+            if (event.target.closest('button')) marcarPlanoAlterado();
+        });
+    }
+
     // Tabs de unidades
     const tabsEl = document.getElementById('unidades-tabs');
     if (tabsEl) {
@@ -3716,10 +3741,9 @@ document.addEventListener('DOMContentLoaded', function() {
     calcularTotais();
     criarGraficosEfetivo();
     renderQuadroDiario();
-    gerarLinksUI();
     verificarURLParams();
 
-    // Consulta sempre a versão atual da aba API_DASHBOARD.
+    // Consulta sempre a versão atual fornecida pelo Apps Script.
     setTimeout(() => {
         carregarDadosDoPainel().catch(() => {});
     }, 100);

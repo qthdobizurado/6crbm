@@ -1,7 +1,7 @@
 /* ============================================================
    ⚙️  CONFIGURAÇÃO GERAL — PAINEL DE COMANDO BOMBEIRO MILITAR
    ============================================================
-   Edite apenas este arquivo para personalizar o painel.
+   Edite este arquivo JavaScript para personalizar o painel.
    O site se adapta automaticamente a qualquer mudança aqui.
    ============================================================ */
 
@@ -13,23 +13,16 @@ const SUBTITULO        = 'BOMBEIRO MILITAR';        // Linha secundária do cabe
 const NOME_CURTO       = '6º CRBM';                // Usado em botões e mensagens (ex: "Enviar ao 6º CRBM")
 
 /* ------------------------------------------------------------
-   🔗  URL DO GOOGLE APPS SCRIPT (Web App)
-   Passos para obter:
-   1. Abra script.google.com e cole o código .gs
-   2. Menu: Implantações > Nova implantação > App da Web
-   3. Copie a URL e cole aqui
-   ------------------------------------------------------------ */
-const SCRIPT_URL        = 'https://script.google.com/a/*/macros/s/AKfycbyuxiVvORoZHOmyoowKkeVcGw7snAj308CzOY7ktGUx1p95bXokpY69dDMA-tQKXbSp/exec';
-const SCRIPT_URL_DIARIO = SCRIPT_URL;
-const SCRIPT_URL_MENSAL = SCRIPT_URL;
+   🔗 GOOGLE APPS SCRIPT — API DA PLANILHA PRIVADA
+   O site continua hospedado no Netlify e chama diretamente este
+   App da Web. O link é público, mas a senha permanece somente no
+   Code.gs e os dados protegidos só são devolvidos após validação.
 
-/* ------------------------------------------------------------
-   📊 LEITURA DIRETA DO DASHBOARD
-   O site lê apenas a aba API_DASHBOARD da mesma planilha.
-   A planilha precisa estar acessível para visualização por link.
+   Para manter o mesmo link, atualize a implantação existente do
+   Apps Script em vez de criar uma implantação nova.
    ------------------------------------------------------------ */
-const PLANILHA_DASHBOARD_ID = '1joVnP30F4b1A-JtsgSF2lp_goHjIFIQt_novCkYDikY';
-const ABA_API_DASHBOARD     = 'API_DASHBOARD';
+const SCRIPT_URL = 'https://script.google.com/a/*/macros/s/AKfycbyuxiVvORoZHOmyoowKkeVcGw7snAj308CzOY7ktGUx1p95bXokpY69dDMA-tQKXbSp/exec';
+const API_TIMEOUT_MS = 20000;
 
 /* ------------------------------------------------------------
    🏢  UNIDADES SUBORDINADAS
