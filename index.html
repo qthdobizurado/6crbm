@@ -109,19 +109,19 @@
         .mat-barra-val{font-size:.72rem;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
 
         /* ===== MINI GRÁFICOS POR CURSO ===== */
-        .mini-graficos-section{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+        .mini-graficos-section{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:0;max-width:100%}
         .mini-graficos-section .card-header{background:var(--amarelo);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
         .mini-graficos-section .card-header span{font-weight:700;text-transform:uppercase;font-size:1rem}
         .mini-graficos-legenda{display:flex;flex-wrap:wrap;gap:10px;padding:12px 18px;background:#f8f9fa;border-bottom:2px solid #000}
-        .mini-graficos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--mini-card-min-width,300px),1fr));gap:0;padding:0;min-width:100%}
-        .mini-card{border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:10px 12px 8px;background:#fff;transition:background .2s;position:relative;overflow:visible}
+        .mini-graficos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--mini-card-min-width,300px),1fr));gap:0;padding:0;min-width:0;width:100%;max-width:100%}
+        .mini-card{border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:10px 12px 8px;background:#fff;transition:background .2s;position:relative;overflow:visible;min-width:0;max-width:100%}
         .mini-card:hover{background:#fffbea;z-index:3}
         .mini-card-titulo{display:flex;align-items:center;gap:6px;margin-bottom:6px}
         .mini-abrev{background:var(--vermelho);color:#fff;font-weight:700;font-size:.62rem;padding:2px 5px;border-radius:3px;white-space:nowrap;flex-shrink:0}
         .mini-nome{font-size:.68rem;color:#555;line-height:1.2;font-weight:500;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
         .mini-total-badge{text-align:center;font-size:.7rem;color:var(--cinza);margin-top:5px;padding-top:4px;border-top:1px dashed #ddd}
         .mini-total-badge strong{color:var(--vermelho-esc);font-size:.8rem}
-        .mini-barras{display:grid;grid-template-columns:repeat(var(--mini-unit-count,1),minmax(42px,1fr));align-items:stretch;column-gap:4px;height:112px;padding-top:4px;min-width:var(--mini-bars-min-width,0)}
+        .mini-barras{display:grid;grid-template-columns:repeat(var(--mini-unit-count,1),minmax(42px,1fr));align-items:stretch;column-gap:4px;height:112px;padding-top:4px;min-width:var(--mini-bars-min-width,0);width:100%;max-width:100%}
         .mini-barra-wrap{min-width:0;display:flex;flex-direction:column;align-items:center;gap:0;position:relative;cursor:help;outline:none}
         .mini-barra-wrap::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% - 30px);transform:translateX(-50%) translateY(4px);background:rgba(20,20,20,.96);color:#fff;border:1px solid #000;border-radius:5px;padding:6px 8px;font-size:.66rem;font-weight:600;line-height:1.25;white-space:pre-line;text-align:left;min-width:130px;max-width:230px;box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;z-index:30;transition:opacity .12s ease,transform .12s ease}
         .mini-barra-wrap:hover::after,.mini-barra-wrap:focus-visible::after{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
@@ -279,11 +279,40 @@
             .controles-container{padding:15px}
             .tabela{font-size:.7rem}.tabela th,.tabela td{padding:4px 5px}
             .dash-arrow{width:36px;height:36px;font-size:1.1rem}
-            .mini-graficos-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+            .dash-titulo-wrapper{min-width:0}
+
+            /* Especialistas: cada gráfico passa a ocupar toda a largura útil.
+               As barras deixam de impor largura mínima, evitando corte lateral. */
+            .mini-graficos-grid{grid-template-columns:minmax(0,1fr);min-width:0;width:100%;max-width:100%}
+            .mini-card{width:100%;min-width:0;max-width:100%;padding:10px 10px 8px;border-right:0}
+            .mini-barras{grid-template-columns:repeat(var(--mini-unit-count,1),minmax(0,1fr));column-gap:3px;min-width:0!important;width:100%;max-width:100%}
+            .mini-barra-wrap{min-width:0;max-width:100%}
+            .mini-barra-bg{width:min(100%,28px)}
+            .mini-barra-label{font-size:.54rem;overflow-wrap:anywhere;word-break:normal}
             .vtr-grid,.mat-grid{grid-template-columns:1fr}
         }
         @media(max-width:480px){
-            .mini-graficos-grid{grid-template-columns:repeat(2,minmax(180px,1fr));min-width:360px}
+            main{padding-left:8px;padding-right:8px}
+            .dashboard-nav{gap:6px}
+            .dash-arrow{width:32px;height:32px;font-size:1rem}
+            .dashboard-title{font-size:1rem}
+            .dashboard-info{font-size:.72rem}
+            .esp-wrapper{gap:16px}
+            .esp-resumo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+            .esp-resumo-card{padding:10px 6px}
+            .esp-resumo-card .numero{font-size:1.35rem}
+            .mini-graficos-section .card-header{padding:11px 8px}
+            .mini-graficos-section .card-header span{font-size:.82rem;line-height:1.25}
+            .mini-graficos-legenda{gap:6px 9px;padding:9px 8px}
+            .mini-graficos-legenda .leg-item span{font-size:.64rem!important}
+            .mini-card{padding:9px 6px 7px}
+            .mini-card-titulo{align-items:flex-start}
+            .mini-nome{font-size:.64rem}
+            .mini-barras{column-gap:2px;height:108px}
+            .mini-barra-bg{width:min(100%,24px)}
+            .mini-barra-val{font-size:.58rem}
+            .mini-barra-label{font-size:.49rem;line-height:1;min-height:24px;margin-top:2px}
+            .mini-total-badge{font-size:.65rem}
         }
 
         /* ===== LINKS E FORMULÁRIOS ===== */
