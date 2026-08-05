@@ -46,6 +46,24 @@
         /* ===== DASHBOARD EFETIVO ===== */
         .dashboard-section{margin-bottom:22px}
         .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+        /* No desktop, os gráficos com três séries precisam de mais largura para
+           que os valores completos não se encontrem. Operacional e Afastamentos
+           usam menos espaço porque possuem apenas uma barra por unidade. */
+        @media(min-width:769px){
+            #dash-panel-0 .dashboard-section{
+                width:min(1800px,calc(100vw - 32px));
+                max-width:calc(100vw - 32px);
+                margin-left:50%;
+                transform:translateX(-50%);
+            }
+            #dash-panel-0 .dashboard-grid{
+                grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);
+                gap:18px;
+            }
+            #dash-panel-0 .card-estatistico{min-width:0}
+            #dash-panel-0 .card-body{padding-left:14px;padding-right:14px}
+            #dash-panel-0 .chart-container{height:210px}
+        }
         .card-estatistico{background:#fff;border:3px solid #000;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);overflow:hidden}
         .card-header{background:var(--amarelo);color:#000;padding:15px 20px;font-weight:700;text-transform:uppercase;font-size:1rem;border-bottom:2px solid #000;text-align:center}
         .card-body{padding:20px}
@@ -1553,9 +1571,9 @@ const _zeros = () => Array(_n).fill(0);
 const dadosEfetivo = {
     labels: nomesUnidades,
     datasets: [
-        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8}
+        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82},
+        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82},
+        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82}
     ]
 };
 const dadosOperacional = {
@@ -1565,9 +1583,9 @@ const dadosOperacional = {
 const dadosAdministrativo = {
     labels: nomesUnidades,
     datasets:[
-        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8},
-        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.7, categoryPercentage:0.8}
+        {label:'Oficiais', data:_zeros(), backgroundColor:COR_OFICIAL, borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82},
+        {label:'Praças',   data:_zeros(), backgroundColor:COR_PRACA,   borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82},
+        {label:'Total',    data:_zeros(), backgroundColor:COR_TOTAL,   borderColor:'#000', borderWidth:2, barPercentage:0.90, categoryPercentage:0.82}
     ]
 };
 const dadosAfastamentos = {
