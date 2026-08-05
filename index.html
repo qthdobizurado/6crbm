@@ -408,12 +408,27 @@
         .aa-dash-resumo-card .rotulo{font-size:.75rem;text-transform:uppercase;line-height:1.3;opacity:.95}
         .aa-dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
         .aa-dash-card{background:#fff;border:3px solid #000;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:0}
-        /* Desktop: mantém o arranjo original de até três cartões lado a lado.
-           A prevenção de sobreposição é feita de forma adaptativa no canvas. */
+        /* Desktop: usa toda a largura útil da janela e mantém os três gráficos
+           na mesma linha. População e área recebem mais espaço porque possuem
+           rótulos numéricos mais longos que o gráfico de municípios. */
         @media(min-width:769px){
-            .aa-dash-card .chart-container{height:220px}
+            #dash-panel-4 .aa-dash-wrapper{
+                width:min(1800px,calc(100vw - 32px));
+                max-width:calc(100vw - 32px);
+                margin-left:50%;
+                transform:translateX(-50%);
+            }
+            #dash-panel-4 .aa-dash-grid{
+                grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,.8fr);
+                gap:16px;
+            }
+            #dash-panel-4 .aa-dash-card .card-body{padding:16px 10px 18px}
+            #dash-panel-4 .aa-dash-card .chart-container{height:230px}
         }
-        @media(max-width:768px){.aa-dash-grid{grid-template-columns:1fr}}
+        @media(max-width:768px){
+            #dash-panel-4 .aa-dash-wrapper{width:100%;max-width:100%;margin-left:0;transform:none}
+            .aa-dash-grid{grid-template-columns:1fr}
+        }
 
         /* ===== ÁREA DE ATUAÇÃO ===== */
         .tabela-area-atuacao{width:100%;border-collapse:collapse;background:#fff;border:2px solid #000;margin:0}
@@ -1464,7 +1479,7 @@ function iniciarAreaAtuacao() {
             tooltip:{callbacks:{label:ctx=>` ${label}: ${formatador(ctx.parsed.y)}`}}},
         scales:{x:{grid:{display:false}, ticks:{font:{size:11,weight:'600'}}},
                 y:{beginAtZero:true, ticks:{stepSize, callback:valor=>formatador(valor), font:{size:10}}, grid:{color:'rgba(0,0,0,.07)'}}},
-        layout:{padding:{top:22}}
+        layout:{padding:{top:30}}
     });
 
     new Chart(document.getElementById('chartAAPop').getContext('2d'), {
@@ -1560,72 +1575,20 @@ const dadosAfastamentos = {
     datasets:[{label:'Afastamentos', data:_zeros(), backgroundColor:'rgba(206,17,38,0.8)', borderColor:'rgba(206,17,38,1)', borderWidth:2}]
 };
 
-function formatarValorCompactoGrafico(valor, casas = 1) {
-    const numero = Number(valor);
-    if (!Number.isFinite(numero)) return String(valor ?? '');
-
-    const absoluto = Math.abs(numero);
-    let divisor = 1;
-    let sufixo = '';
-    if (absoluto >= 1000000) { divisor = 1000000; sufixo = ' mi'; }
-    else if (absoluto >= 1000) { divisor = 1000; sufixo = ' mil'; }
-    else return formatarNumeroPtBr(numero, Number.isInteger(numero) ? 0 : casas);
-
-    const reduzido = numero / divisor;
-    const decimais = reduzido >= 100 ? 0 : casas;
-    return reduzido.toLocaleString('pt-BR', {
-        minimumFractionDigits:0,
-        maximumFractionDigits:decimais
-    }) + sufixo;
-}
-
-function prepararRotuloAdaptativo(ctx, textoCompleto, numero, larguraDisponivel, idGrafico) {
-    const familia = 'Segoe UI, Tahoma, sans-serif';
-    const tamanhos = [11,10,9,8,7];
-
-    for (const tamanho of tamanhos) {
-        ctx.font = `bold ${tamanho}px ${familia}`;
-        if (ctx.measureText(textoCompleto).width <= larguraDisponivel) {
-            return {texto:textoCompleto, tamanho};
-        }
-    }
-
-    // Em cartões estreitos, uma notação curta evita colisão sem deslocar
-    // verticalmente o rótulo. O número integral continua disponível no tooltip.
-    const compacto = formatarValorCompactoGrafico(numero, 1);
-
-    for (const tamanho of [10,9,8]) {
-        ctx.font = `bold ${tamanho}px ${familia}`;
-        if (ctx.measureText(compacto).width <= larguraDisponivel) {
-            return {texto:compacto, tamanho};
-        }
-    }
-
-    return {texto:compacto, tamanho:8};
-}
-
 const pluginValorAcima = {
     id:'valorAcima',
     afterDatasetsDraw(chart) {
         const {ctx,data} = chart;
         const idGrafico = chart.canvas?.id || '';
-        const rotuloAdaptativo = idGrafico === 'chartAAPop' || idGrafico === 'chartAAArea';
 
         ctx.save();
         ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
+        ctx.font = 'bold 14px Segoe UI, Tahoma, sans-serif';
 
         data.datasets.forEach((ds, dsIndex) => {
             const meta = chart.getDatasetMeta(dsIndex);
-            const barrasValidas = meta.data.filter(Boolean);
-            let espacoCentro = chart.chartArea?.width || chart.width;
-            if (barrasValidas.length > 1) {
-                espacoCentro = Math.min(...barrasValidas.slice(1).map((barra, i) =>
-                    Math.abs(barra.x - barrasValidas[i].x)
-                ));
-            }
-            const larguraDisponivel = Math.max(20, espacoCentro - 6);
 
             ds.data.forEach((val, i) => {
                 const bar = meta.data[i];
@@ -1636,17 +1599,8 @@ const pluginValorAcima = {
                 if (idGrafico === 'chartAAPop') texto = formatarPopulacao(numero);
                 if (idGrafico === 'chartAAArea') texto = formatarNumeroPtBr(numero, 1);
 
-                if (rotuloAdaptativo) {
-                    const rotulo = prepararRotuloAdaptativo(
-                        ctx, texto, numero, larguraDisponivel, idGrafico
-                    );
-                    texto = rotulo.texto;
-                    ctx.font = `bold ${rotulo.tamanho}px Segoe UI, Tahoma, sans-serif`;
-                } else {
-                    ctx.font = 'bold 11px Segoe UI, Tahoma, sans-serif';
-                }
-
-                // A distância vertical continua idêntica para todas as barras.
+                // Valor completo, com fonte legível e sempre na mesma distância
+                // acima da barra. O espaçamento é resolvido pela largura do grid.
                 ctx.fillText(texto, bar.x, bar.y - 4);
             });
         });
