@@ -1599,13 +1599,11 @@ const pluginValorAcima = {
         const {ctx,data} = chart;
         const idGrafico = chart.canvas?.id || '';
 
-        const ehAreaAtuacao = ['chartAAPop','chartAAArea','chartAAMun'].includes(idGrafico);
-        const ehTresBarrasEfetivo = ['chartEfetivoTotal','chartAdministrativo'].includes(idGrafico);
-        const tamanhoFonte = ehAreaAtuacao
-            ? 14
-            : ehTresBarrasEfetivo
-                ? (chart.width >= 700 ? 13 : 12)
-                : 11;
+        // Padrão único baseado no gráfico
+        // "Quantidade por Material e Unidade — Barras Comparativas".
+        // Todos os valores acima de barras/colunas usam exatamente o mesmo
+        // tamanho, peso, cor, alinhamento e distância da barra.
+        const tamanhoFonte = 11;
 
         ctx.save();
         ctx.fillStyle = '#000';
