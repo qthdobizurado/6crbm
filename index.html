@@ -3376,6 +3376,22 @@ function resetarUltimosPreenchimentosMensais() {
     });
 }
 
+function invalidarDashboardComGraficos(flagPronto, idsGraficos, indiceDashboard, iniciarDashboard) {
+    idsGraficos.forEach(id => {
+        try {
+            const grafico = Chart.getChart(id);
+            if (grafico) grafico.destroy();
+        } catch(e) {}
+    });
+
+    window[flagPronto] = false;
+
+    // Se o usuário estiver olhando para este dashboard, ele é reconstruído
+    // imediatamente com os dados recém-carregados. Caso contrário, a própria
+    // navegação fará a inicialização na próxima abertura.
+    if (dashAtual === indiceDashboard) iniciarDashboard();
+}
+
 function aplicarSnapshotNoPainel(snapshot) {
     if (!snapshot) return;
 
@@ -3396,24 +3412,38 @@ function aplicarSnapshotNoPainel(snapshot) {
             ['chartEfetivoTotal','chartOperacional','chartAdministrativo','chartAfastamentos']
                 .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
         } catch(e) {}
+        // Os dashboards abaixo são inicializados sob demanda. Se o usuário os
+        // abrir antes de a planilha terminar de carregar, os gráficos nascem com
+        // valores zerados. Como eles guardam cópias dos arrays, apenas chamar
+        // update() não substitui os dados. Destruímos as instâncias antigas e
+        // recriamos o dashboard ativo; os demais serão recriados ao serem abertos.
         try {
-            if (window._vtrPronto) {
-                ['chartViaturas','chartEmbarcacoes']
-                    .forEach(id => { try { Chart.getChart(id)?.update(); } catch(e) {} });
-            }
+            invalidarDashboardComGraficos(
+                '_vtrPronto',
+                ['chartViaturas','chartEmbarcacoes'],
+                2,
+                iniciarViaturas
+            );
         } catch(e) {}
         try {
-            if (window._matPronto) {
-                try { Chart.getChart('chartMateriaisComp')?.update(); } catch(e) {}
-            }
+            invalidarDashboardComGraficos(
+                '_matPronto',
+                ['chartMateriaisComp'],
+                3,
+                iniciarMateriais
+            );
         } catch(e) {}
         try {
-            if (window._espPronto) window._espPronto = false;
+            window._espPronto = false;
             if (dashAtual === 1) iniciarEspecialistas();
         } catch(e) {}
         try {
-            window._aaPronto = false;
-            if (dashAtual === 4) iniciarAreaAtuacao();
+            invalidarDashboardComGraficos(
+                '_aaPronto',
+                ['chartAAPop','chartAAArea','chartAAMun'],
+                4,
+                iniciarAreaAtuacao
+            );
         } catch(e) {}
     }
 }
