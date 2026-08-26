@@ -2335,6 +2335,29 @@ async function preencherFormularioDiario(uid) {
     }
 }
 
+function preencherPlanoChamadaFormularioMensal(uid) {
+    const wrapper = document.getElementById('form-mensal-wrapper');
+    const valor = _dadosProtegidos.planosChamada.get(String(uid));
+
+    if (valor == null) return false;
+
+    let plano = [];
+    try {
+        plano = JSON.parse(valor || '[]');
+    } catch (erro) {
+        console.error('Plano de chamada inválido para a unidade ' + uid, erro);
+        return false;
+    }
+
+    preencherTabelaPC(Array.isArray(plano) ? plano : []);
+
+    // preencherTabelaPC pode adicionar linhas e, por isso, marcar o campo como
+    // alterado. Como aqui estamos apenas carregando o valor já salvo, ele deve
+    // continuar sendo preservado até que o usuário realmente o edite.
+    if (wrapper) wrapper.dataset.preservarPlanoChamada = 'true';
+    return true;
+}
+
 async function preencherFormularioMensal(uid) {
     const wrapper = document.getElementById('form-mensal-wrapper');
     if (wrapper) wrapper.dataset.preservarPlanoChamada = 'true';
@@ -2376,6 +2399,39 @@ async function preencherFormularioMensal(uid) {
         }
 
         const dataRef = r.Timestamp ? ` (ref: ${r.Timestamp})` : '';
+
+        // O PlanoChamada não faz parte do snapshot público. Ao abrir o questionário
+        // pelo link mensal já distribuído à unidade, o site solicita ao Apps Script
+        // somente o Plano de Chamada daquela unidade, sem pedir a senha novamente.
+        if (r.temPlanoChamada) {
+            try {
+                const respostaPlano = await chamarAppsScript({
+                    acao: 'buscarPlanoChamadaPreenchimento',
+                    unidadeId: uid
+                });
+
+                if (!respostaPlano.sucesso) {
+                    throw new Error(respostaPlano.mensagem || 'Não foi possível carregar o Plano de Chamada.');
+                }
+
+                _dadosProtegidos.planosChamada.set(String(uid), respostaPlano.planoChamada || '[]');
+                const carregado = preencherPlanoChamadaFormularioMensal(uid);
+
+                mostrarStatusCarregamento('mensal',
+                    carregado
+                        ? `✏️ Dados do último preenchimento e Plano de Chamada carregados${dataRef}. Revise e envie novamente se necessário.`
+                        : `⚠️ Os demais dados foram carregados, mas não foi possível preencher o Plano de Chamada${dataRef}.`,
+                    carregado ? '#856404' : '#6c757d'
+                );
+            } catch (erroPlano) {
+                mostrarStatusCarregamento('mensal',
+                    `⚠️ Os demais dados foram carregados, mas o Plano de Chamada anterior não pôde ser carregado${dataRef}.`,
+                    '#6c757d'
+                );
+            }
+            return;
+        }
+
         mostrarStatusCarregamento('mensal',
             `✏️ Dados do último preenchimento carregados${dataRef}. Revise e envie novamente se necessário.`,
             '#856404'
