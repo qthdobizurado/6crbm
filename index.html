@@ -2325,6 +2325,24 @@ async function preencherFormularioDiario(uid) {
         set('fd-oficial', r.oficial !== '-' ? r.oficial : '');
         set('fd-vtrs',    r.vtrs    !== '-' ? r.vtrs    : '');
 
+        // O formulário Diário é acessado pelo link específico da unidade.
+        // Por isso, o contato anterior pode ser carregado sem pedir a senha
+        // novamente. O contato continua fora do snapshot público.
+        try {
+            const respostaContato = await chamarAppsScript({
+                acao: 'buscarContatoPreenchimento',
+                unidadeId: uid
+            });
+
+            if (respostaContato && respostaContato.sucesso) {
+                const contato = respostaContato.contato;
+                set('fd-contato', contato && contato !== '-' && contato !== '—' ? contato : '');
+                if (wrapper) wrapper.dataset.preservarContato = 'true';
+            }
+        } catch (erroContato) {
+            console.warn('Não foi possível carregar o contato anterior:', erroContato);
+        }
+
         const dataRef = r.timestamp ? ` (ref: ${r.timestamp})` : '';
         mostrarStatusCarregamento('diario',
             `✏️ Dados do último preenchimento carregados${dataRef}. Revise e envie novamente se necessário.`,
